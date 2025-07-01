@@ -59,3 +59,4 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - The system currently uses mock data to simulate backend functionality
 - Authentication is simulated through localStorage
 - For production use, implement proper authentication and database integration
+# MSA-Parent-App

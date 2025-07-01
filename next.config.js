@@ -16,23 +16,10 @@ const nextConfig = {
       };
     }
     
-    // Exclude server directory from client-side bundle
-    config.module.rules.push({
-      test: /server\/.*\.(ts|js)$/,
-      loader: 'ignore-loader',
-    });
-    
-    // Ignore server files completely
-    config.externals = config.externals || [];
-    if (Array.isArray(config.externals)) {
-      config.externals.push('/server/socketServer.ts');
-    }
-    
     return config;
   },
   // Exclude server directory from build
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  serverExternalPackages: ['socket.io'],
 };
 
 module.exports = nextConfig;

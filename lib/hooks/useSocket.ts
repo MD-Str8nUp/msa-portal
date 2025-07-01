@@ -1,71 +1,29 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
 
+// Mock socket implementation for production deployment
 export const useSocket = (userId: string, userRole: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const socket = useRef<Socket | null>(null);
   
   useEffect(() => {
-    if (!userId) return;
-    
-    // Create socket connection
-    const socketInstance = io(process.env.NODE_ENV === 'production' 
-      ? window.location.origin 
-      : 'http://localhost:3000', {
-      path: '/api/socket',
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity,
-    });
-    
-    socket.current = socketInstance;
-    
-    // Setup event listeners
-    socketInstance.on('connect', () => {
-      console.log('Socket connected successfully');
-      setIsConnected(true);
-      
-      // Authenticate user
-      socketInstance.emit('authenticate', { userId, role: userRole });
-    });
-    
-    socketInstance.on('online_users', (users) => {
-      setOnlineUsers(users);
-    });
-    
-    socketInstance.on('disconnect', () => {
-      console.log('Socket disconnected');
-      setIsConnected(false);
-    });
-    
-    socketInstance.on('connect_error', (err) => {
-      console.error('Socket connection error:', err);
-      setIsConnected(false);
-    });
+    // Simulate connection
+    setIsConnected(true);
     
     // Clean up on unmount
     return () => {
-      socketInstance.disconnect();
+      setIsConnected(false);
     };
   }, [userId, userRole]);
   
-  // Send a message
+  // Mock send message function
   const sendMessage = useCallback((content: string, receiverId: string) => {
-    if (socket.current && isConnected) {
-      socket.current.emit('send_message', {
-        content,
-        senderId: userId,
-        receiverId,
-      });
-      return true;
-    }
-    return false;
-  }, [isConnected, userId]);
+    console.log('Mock: Sending message', { content, receiverId });
+    return true;
+  }, []);
   
-  // Update event RSVP
+  // Mock update event RSVP
   const updateEventRSVP = useCallback((rsvpData: {
     attendanceId?: string;
     scoutId: string;
@@ -74,28 +32,22 @@ export const useSocket = (userId: string, userRole: string) => {
     groupId: string;
     status: string;
   }) => {
-    if (socket.current && isConnected) {
-      socket.current.emit('update_event_rsvp', rsvpData);
-      return true;
-    }
-    return false;
-  }, [isConnected]);
+    console.log('Mock: Updating RSVP', rsvpData);
+    return true;
+  }, []);
   
-  // Update scout progress
+  // Mock update scout progress
   const updateScoutProgress = useCallback((progressData: {
     name: string;
     description: string;
     scoutId: string;
     groupId: string;
   }) => {
-    if (socket.current && isConnected) {
-      socket.current.emit('update_scout_progress', progressData);
-      return true;
-    }
-    return false;
-  }, [isConnected]);
+    console.log('Mock: Updating scout progress', progressData);
+    return true;
+  }, []);
   
-  // Upload document
+  // Mock upload document
   const uploadDocument = useCallback((documentData: {
     title: string;
     fileUrl: string;
@@ -106,21 +58,13 @@ export const useSocket = (userId: string, userRole: string) => {
     size: number;
     groupId?: string;
   }) => {
-    if (socket.current && isConnected) {
-      socket.current.emit('document_uploaded', documentData);
-      return true;
-    }
-    return false;
-  }, [isConnected]);
+    console.log('Mock: Uploading document', documentData);
+    return true;
+  }, []);
   
-  // Subscribe to an event
+  // Mock subscribe function
   const subscribe = useCallback((event: string, callback: (...args: any[]) => void) => {
-    if (socket.current) {
-      socket.current.on(event, callback);
-      return () => {
-        socket.current?.off(event, callback);
-      };
-    }
+    console.log('Mock: Subscribing to event', event);
     return () => {};
   }, []);
   
