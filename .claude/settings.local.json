@@ -25,7 +25,8 @@
       "Bash(cp:*)",
       "Bash(npm --version)",
       "Bash(node:*)",
-      "Bash(nvm use:*)"
+      "Bash(nvm use:*)",
+      "Bash(vercel logs:*)"
     ],
     "deny": []
   }
