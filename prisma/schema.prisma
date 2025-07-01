@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String    @unique
+  password       String
+  role           String    // "parent", "leader", "executive"
+  avatar         String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  scouts         Scout[]   @relation("ParentToScout")
+  messages       Message[] @relation("UserMessages")
+  sentMessages   Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  leaderGroups   UserGroup[] @relation("UserToGroup")
+  attendance     Attendance[] @relation("UserAttendance")
+
+  // Online status
+  lastSeen       DateTime  @default(now())
+  isOnline       Boolean   @default(false)
+}
+
+model Scout {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  age            Int
+  rank           String
+  joinedDate     DateTime  @default(now())
+  parentId       String    @db.ObjectId
+  groupId        String    @db.ObjectId
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  parent         User      @relation("ParentToScout", fields: [parentId], references: [id])
+  group          Group     @relation(fields: [groupId], references: [id])
+  achievements   Achievement[]
+  attendance     Attendance[] @relation("ScoutAttendance")
+}
+
+model Group {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String    @unique
+  description    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  scouts         Scout[]
+  groupLeaders   UserGroup[] @relation("GroupToUser")
+  events         Event[]   @relation("GroupEvents")
+}
+
+model Event {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  title               String
+  description         String
+  location            String
+  startDate           DateTime
+  endDate             DateTime
+  groupId             String?   @db.ObjectId
+  requiresPermissionSlip Boolean @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  // Relations
+  group               Group?    @relation("GroupEvents", fields: [groupId], references: [id])
+  attendances         Attendance[]
+}
+
+model Message {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  content        String
+  senderId       String    @db.ObjectId
+  receiverId     String    @db.ObjectId
+  read           Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  user           User      @relation("UserMessages", fields: [senderId], references: [id])
+  sender         User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Achievement {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  description    String
+  dateEarned     DateTime  @default(now())
+  scoutId        String    @db.ObjectId
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  scout          Scout     @relation(fields: [scoutId], references: [id])
+}
+
+model Attendance {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  scoutId        String    @db.ObjectId
+  userId         String    @db.ObjectId
+  eventId        String    @db.ObjectId
+  status         String    // "present", "absent", "excused"
+  date           DateTime  @default(now())
+  
+  // Relations
+  scout          Scout     @relation("ScoutAttendance", fields: [scoutId], references: [id])
+  user           User      @relation("UserAttendance", fields: [userId], references: [id])
+  event          Event     @relation(fields: [eventId], references: [id])
+}
+
+model Document {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  fileUrl        String
+  fileType       String
+  description    String?
+  uploadedBy     String
+  uploadDate     DateTime  @default(now())
+  type           String    // "form", "policy", "announcement", etc.
+  size           Int       // Size in bytes
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Report {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  type           String    // "attendance", "achievement", "financial", etc.
+  date           DateTime  @default(now())
+  generatedBy    String
+  data           Json      // Report data in JSON format
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model UserGroup {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String    @db.ObjectId
+  groupId        String    @db.ObjectId
+  role           String    // "leader", "assistant", etc.
+  createdAt      DateTime  @default(now())
+  
+  // Relations
+  user           User      @relation("UserToGroup", fields: [userId], references: [id])
+  group          Group     @relation("GroupToUser", fields: [groupId], references: [id])
+  
+  @@unique([userId, groupId])
+}

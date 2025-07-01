@@ -1,0 +1,136 @@
+"use client";
+
+import React, { useState, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { parentNavigation } from "@/components/navigation/ParentNavigation";
+import { mockScoutService, mockGroupService } from "@/lib/mock/data";
+import { Button } from "@/components/ui/Button";
+import { Plus, Info, Award, Calendar } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import ScoutDetailModal from "@/components/scouts/ScoutDetailModal";
+import AddScoutModal from "@/components/scouts/AddScoutModal";
+import { Scout } from "@/types";
+
+export default function ParentScoutsPage() {
+  // In a real app, this would come from auth context/session
+  const parentId = "user-1";
+  
+  // Get parent's scouts
+  const myScouts = mockScoutService.getScouts(parentId);
+  const groups = mockGroupService.getGroups();
+  
+  // State for modals
+  const [selectedScout, setSelectedScout] = useState<Scout | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  
+  // Stable callback that won't change between renders
+  const handleCloseDetailModal = useCallback(() => {
+    setDetailModalOpen(false);
+  }, []);
+  
+  const handleCloseAddModal = useCallback(() => {
+    setAddModalOpen(false);
+  }, []);
+  
+  const viewScout = useCallback((scoutId: string) => {
+    const scout = mockScoutService.getScoutById(scoutId);
+    if (scout) {
+      setSelectedScout(scout);
+      setDetailModalOpen(true);
+    }
+  }, []);
+  
+  // For debugging
+  console.log('Rendering ParentScoutsPage:', new Date().toISOString());
+  
+  return (
+    <DashboardLayout 
+      navigation={parentNavigation} 
+      pageTitle="My Scouts" 
+      userRole="parent"
+    >
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold text-gray-800">My Scouts</h2>
+          <Button className="flex items-center space-x-2" onClick={() => setAddModalOpen(true)}>
+            <Plus size={16} />
+            <span>Add Scout</span>
+          </Button>
+        </div>
+        
+        {/* Scouts List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {myScouts.length > 0 ? (
+            myScouts.map(scout => (
+              <Card key={scout.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <CardTitle>{scout.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-sm font-medium">Age: {scout.age}</span>
+                    <span className="text-sm font-medium">Group: {scout.groupName}</span>
+                    <span className="text-sm font-medium">Rank: {scout.rank}</span>
+                    <span className="text-sm font-medium">
+                      Joined: {formatDate(scout.joinedDate, "MMM dd, yyyy")}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between mt-3 pt-3 border-t">
+                    <div className="flex items-center text-sm text-blue-600">
+                      <Award size={16} className="mr-1" />
+                      <span>5 Badges</span>
+                    </div>
+                    <div className="flex items-center text-sm text-green-600">
+                      <Calendar size={16} className="mr-1" />
+                      <span>90% Attendance</span>
+                    </div>
+                  </div>
+                </CardContent>
+                <div className="p-4 pt-0 flex space-x-2">
+                  <Button 
+                    className="w-full"
+                    onClick={() => viewScout(scout.id)}
+                  >
+                    <Info size={16} className="mr-2" />
+                    View Profile
+                  </Button>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p className="text-gray-500 col-span-full text-center py-8">
+              You don't have any scouts registered yet.
+            </p>
+          )}
+        </div>
+        
+        {/* Scout Detail Modal */}
+        <ScoutDetailModal
+          open={detailModalOpen}
+          onClose={handleCloseDetailModal}
+          scout={selectedScout}
+        />
+        
+        {/* Add Scout Modal */}
+        <AddScoutModal
+          open={addModalOpen}
+          onClose={handleCloseAddModal}
+          groups={groups.map(g => ({ id: g.id, name: g.name }))}
+          onSubmit={(scoutData) => {
+            // In a real app, this would trigger an API call
+            mockScoutService.addScout({
+              ...scoutData,
+              parentId
+            });
+            // Close modal and refresh data would happen here
+            setAddModalOpen(false);
+          }}
+        />
+      </div>
+    </DashboardLayout>
+  );
+}

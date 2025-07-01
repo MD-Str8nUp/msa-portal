@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(ss:*)",
+      "Bash(npx next dev:*)",
+      "Bash(pkill:*)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "Bash(true)",
+      "Bash(npm cache clean:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(npm view:*)",
+      "Bash(npx json5:*)",
+      "Bash(cp:*)",
+      "Bash(npm --version)",
+      "Bash(node:*)",
+      "Bash(nvm use:*)"
+    ],
+    "deny": []
+  }
+}
