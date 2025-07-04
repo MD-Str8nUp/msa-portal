@@ -16,14 +16,14 @@ export const parentNavigation = [
     icon: Home,
   },
   {
+    name: "My Scouts",
+    href: "/parent/scouts",
+    icon: Users,
+  },
+  {
     name: "Progress",
     href: "/parent/progress",
     icon: Award,
-  },
-  {
-    name: "Admin",
-    href: "/parent/admin",
-    icon: FileText,
   },
   {
     name: "Events",
@@ -39,5 +39,15 @@ export const parentNavigation = [
     name: "Resources",
     href: "/parent/resources",
     icon: BookOpen,
+  },
+  {
+    name: "Admin Info",
+    href: "/parent/admin",
+    icon: FileText,
+  },
+  {
+    name: "Settings",
+    href: "/parent/settings",
+    icon: Settings,
   },
 ];

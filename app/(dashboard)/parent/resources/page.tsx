@@ -20,6 +20,9 @@ import {
 import { Input } from "@/components/ui/Input";
 
 export default function ParentResourcesPage() {
+  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [searchTerm, setSearchTerm] = React.useState('');
+
   // Mock resources
   const resources = [
     {
@@ -108,6 +111,37 @@ export default function ParentResourcesPage() {
     "Events",
     "Development"
   ];
+
+  // Filter resources based on category and search term
+  const filteredResources = resources.filter(resource => {
+    const matchesCategory = selectedCategory === 'All' || resource.category === selectedCategory;
+    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         resource.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  // Handler functions
+  const handleViewLesson = (lessonId: string) => {
+    alert(`Would open lesson details for: ${lessonId}`);
+  };
+
+  const handleResourceAction = (resource: any) => {
+    if (resource.type === 'document' || resource.type === 'video') {
+      // Simulate download
+      alert(`Downloading: ${resource.title}\nFile size: ${resource.fileSize}`);
+    } else if (resource.type === 'link') {
+      // Simulate opening link
+      alert(`Opening external link: ${resource.title}`);
+    } else if (resource.type === 'lesson') {
+      // Simulate starting lesson
+      alert(`Starting lesson: ${resource.title}\n${resource.lessonCount} lessons available\nCurrent progress: ${resource.progress}%`);
+    }
+  };
+
+  const handleCategoryFilter = (category: string) => {
+    setSelectedCategory(category);
+  };
   
   return (
     <DashboardLayout 
@@ -145,7 +179,7 @@ export default function ParentResourcesPage() {
                       <div className="bg-green-50 text-green-700 font-medium px-2 py-1 rounded text-sm mr-3">
                         {lesson.score}%
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleViewLesson(lesson.id)}>
                         View
                       </Button>
                     </div>
@@ -166,6 +200,8 @@ export default function ParentResourcesPage() {
               <Input 
                 placeholder="Search resources..." 
                 className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2">
@@ -186,8 +222,9 @@ export default function ParentResourcesPage() {
             {resourceCategories.map(category => (
               <button
                 key={category}
-                className={`px-3 py-1 text-sm rounded-full ${
-                  category === 'All'
+                onClick={() => handleCategoryFilter(category)}
+                className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  category === selectedCategory
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
@@ -200,7 +237,7 @@ export default function ParentResourcesPage() {
         
         {/* Resources Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {resources.map((resource) => (
+          {filteredResources.map((resource) => (
             <Card key={resource.id} className="overflow-hidden">
               <CardHeader className="pb-3 flex flex-row justify-between items-start">
                 <div>
@@ -279,7 +316,11 @@ export default function ParentResourcesPage() {
                 )}
               </CardContent>
               <CardFooter className="border-t pt-3">
-                <Button variant="outline" className="flex items-center w-full justify-center">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center w-full justify-center"
+                  onClick={() => handleResourceAction(resource)}
+                >
                   {resource.type === 'document' || resource.type === 'video' ? (
                     <>
                       <Download className="h-4 w-4 mr-2" />

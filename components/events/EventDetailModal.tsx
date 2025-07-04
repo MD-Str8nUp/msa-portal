@@ -15,20 +15,28 @@ import RsvpCard from "./RsvpCard";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 
 interface EventDetailModalProps {
-  open: boolean;
+  event: any;
+  isOpen: boolean;
   onClose: () => void;
-  event: Event | null;
   scouts?: {
     id: string;
     name: string;
   }[];
+  onRsvp?: (eventId: string, status: 'attending' | 'not-attending') => void;
+  rsvpStatus?: Record<string, 'attending' | 'not-attending' | 'pending'>;
+  permissionSigned?: Record<string, boolean>;
+  onSignPermission?: (eventId: string, scoutId: string) => void;
 }
 
 export default function EventDetailModal({
-  open,
+  isOpen,
   onClose,
   event,
-  scouts = []
+  scouts = [],
+  onRsvp,
+  rsvpStatus,
+  permissionSigned,
+  onSignPermission
 }: EventDetailModalProps) {
   if (!event) {
     return null;
@@ -43,7 +51,7 @@ export default function EventDetailModal({
   
   return (
     <Dialog 
-      open={open} 
+      open={isOpen} 
       onOpenChange={handleOpenChange}
     >
       <DialogContent className="sm:max-w-[600px]">

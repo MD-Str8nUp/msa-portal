@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
@@ -8,6 +8,20 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 export default function ParentSettingsPage() {
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [smsNotifications, setSmsNotifications] = useState(false);
+  
+  const handleSaveProfile = () => {
+    alert("Profile changes saved successfully!");
+  };
+  
+  const handleUpdatePassword = () => {
+    alert("Password updated successfully!");
+  };
+  
+  const handleSavePreferences = () => {
+    alert("Notification preferences saved successfully!");
+  };
   return (
     <DashboardLayout 
       navigation={parentNavigation} 
@@ -47,7 +61,7 @@ export default function ParentSettingsPage() {
                 </label>
                 <Input id="phone" defaultValue="(555) 123-4567" />
               </div>
-              <Button>Save Changes</Button>
+              <Button onClick={handleSaveProfile}>Save Changes</Button>
             </CardContent>
           </Card>
           
@@ -75,7 +89,7 @@ export default function ParentSettingsPage() {
                 </label>
                 <Input id="confirmPassword" type="password" />
               </div>
-              <Button>Update Password</Button>
+              <Button onClick={handleUpdatePassword}>Update Password</Button>
             </CardContent>
           </Card>
           
@@ -91,16 +105,34 @@ export default function ParentSettingsPage() {
                     <h4 className="font-medium">Email Notifications</h4>
                     <p className="text-sm text-gray-500">Receive emails about events and announcements</p>
                   </div>
-                  <div className="h-6 w-11 bg-gray-200 rounded-full cursor-pointer flex items-center"></div>
+                  <button 
+                    onClick={() => setEmailNotifications(!emailNotifications)}
+                    className={`h-6 w-11 rounded-full cursor-pointer flex items-center transition-colors ${
+                      emailNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <div className={`h-5 w-5 bg-white rounded-full shadow transform transition-transform ${
+                      emailNotifications ? 'translate-x-5' : 'translate-x-1'
+                    }`}></div>
+                  </button>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">SMS Notifications</h4>
                     <p className="text-sm text-gray-500">Receive text messages for urgent updates</p>
                   </div>
-                  <div className="h-6 w-11 bg-gray-200 rounded-full cursor-pointer flex items-center"></div>
+                  <button 
+                    onClick={() => setSmsNotifications(!smsNotifications)}
+                    className={`h-6 w-11 rounded-full cursor-pointer flex items-center transition-colors ${
+                      smsNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <div className={`h-5 w-5 bg-white rounded-full shadow transform transition-transform ${
+                      smsNotifications ? 'translate-x-5' : 'translate-x-1'
+                    }`}></div>
+                  </button>
                 </div>
-                <Button>Save Preferences</Button>
+                <Button onClick={handleSavePreferences}>Save Preferences</Button>
               </div>
             </CardContent>
           </Card>

@@ -42,7 +42,7 @@ export default function ParentEventsPage() {
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     
   // State for event detail modal
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [eventDetailModalOpen, setEventDetailModalOpen] = useState(false);
 
   // Get closest upcoming event
@@ -259,7 +259,14 @@ export default function ParentEventsPage() {
                             )}
                             <span className="text-xs text-gray-500">{event.attendees} attendees</span>
                           </div>
-                          <Button size="sm" className="flex items-center">
+                          <Button 
+                            size="sm" 
+                            className="flex items-center"
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setEventDetailModalOpen(true);
+                            }}
+                          >
                             View Details 
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
@@ -308,7 +315,14 @@ export default function ParentEventsPage() {
                       </CardContent>
                       <CardFooter className="border-t pt-4 bg-gray-50">
                         <div className="flex justify-end w-full">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setEventDetailModalOpen(true);
+                            }}
+                          >
                             View Summary
                           </Button>
                         </div>
@@ -377,6 +391,23 @@ export default function ParentEventsPage() {
             </div>
           </DialogContent>
         </Dialog>
+        
+        {/* Event Detail Modal */}
+        {selectedEvent && (
+          <EventDetailModal
+            event={selectedEvent}
+            isOpen={eventDetailModalOpen}
+            onClose={() => setEventDetailModalOpen(false)}
+            scouts={myScouts}
+            onRsvp={handleRsvp}
+            rsvpStatus={rsvpStatus}
+            permissionSigned={permissionSigned}
+            onSignPermission={(eventId, scoutId) => {
+              setActiveEventId(`${eventId}-${scoutId}`);
+              setPermissionModalOpen(true);
+            }}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

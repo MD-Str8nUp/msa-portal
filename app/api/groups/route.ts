@@ -1,11 +1,18 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { mockGroupService } from '@/lib/mock/data';
 
 export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const leaderId = url.searchParams.get('leaderId');
+  
+  // If database is disabled, return mock data
+  if (process.env.DISABLE_DATABASE === 'true') {
+    const mockGroups = mockGroupService.getGroups();
+    return Response.json(mockGroups);
+  }
+
   try {
-    const url = new URL(req.url);
-    const leaderId = url.searchParams.get('leaderId');
-    
     let groups;
     
     if (leaderId) {
@@ -53,8 +60,9 @@ export async function GET(req: NextRequest) {
     
     return Response.json(groups);
   } catch (error) {
-    console.error('Error fetching groups:', error);
-    return Response.json({ error: 'Failed to fetch groups' }, { status: 500 });
+    console.error('Error fetching groups, falling back to mock data:', error);
+    const mockGroups = mockGroupService.getGroups();
+    return Response.json(mockGroups);
   }
 }
 

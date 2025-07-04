@@ -6,6 +6,19 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
 import { mockScoutService, mockEventService } from "@/lib/mock/data";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
+import { Button } from "@/components/ui/Button";
+import { 
+  Calendar, 
+  MessageSquare, 
+  FileText, 
+  Users, 
+  Award, 
+  Clock,
+  ChevronRight,
+  Bell,
+  Heart,
+  CheckCircle
+} from "lucide-react";
 
 export default function ParentDashboard() {
   // In a real app, this would come from auth context/session
@@ -20,68 +33,183 @@ export default function ParentDashboard() {
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     .slice(0, 3);
 
+  // Mock data for demonstration
+  const pendingPermissionSlips = 2;
+  const unreadMessages = 3;
+  const nextEvent = upcomingEvents[0];
+  const volunteerOpportunities = 1;
+
   return (
     <DashboardLayout 
       navigation={parentNavigation} 
-      pageTitle="Parent Dashboard" 
+      pageTitle="Dashboard" 
       userRole="parent"
     >
-      <div className="space-y-6">
-        {/* Welcome Section */}
-        <div>
-          <h2 className="text-2xl font-semibold">Welcome, Parent!</h2>
-          <p className="text-gray-500">Here&apos;s what&apos;s happening with your scouts</p>
+      <div className="space-y-6 pb-6">
+        {/* Welcome Section - Mobile Optimized */}
+        <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 rounded-xl p-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Welcome Back!</h1>
+          <p className="text-muted-foreground text-lg">Here's what's happening with your scouts today</p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Scouts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{myScouts.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{upcomingEvents.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Unread Messages</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">2</div>
-            </CardContent>
-          </Card>
+        {/* Priority Actions - Mobile First */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Quick Actions</h2>
+          
+          {/* High Priority Items */}
+          {pendingPermissionSlips > 0 && (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-warning/20 rounded-lg">
+                      <FileText className="h-6 w-6 text-warning" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Permission Slips Needed</h3>
+                      <p className="text-sm text-muted-foreground">{pendingPermissionSlips} events need your approval</p>
+                    </div>
+                  </div>
+                  <Button size="sm" className="touch-target">
+                    Sign Now
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Action Grid */}
+          <div className="mobile-grid">
+            {/* Messages */}
+            <Card className="quick-action-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-accent/20 rounded-lg">
+                      <MessageSquare className="h-6 w-6 text-accent-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Messages</h3>
+                      {unreadMessages > 0 && (
+                        <div className="flex items-center space-x-1">
+                          <div className="h-2 w-2 bg-warning rounded-full"></div>
+                          <span className="text-sm text-warning">{unreadMessages} new</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Events */}
+            <Card className="quick-action-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-primary/20 rounded-lg">
+                      <Calendar className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Events</h3>
+                      <p className="text-sm text-muted-foreground">{upcomingEvents.length} upcoming</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Volunteer */}
+            <Card className="quick-action-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-success/20 rounded-lg">
+                      <Heart className="h-6 w-6 text-success" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Volunteer</h3>
+                      <p className="text-sm text-muted-foreground">{volunteerOpportunities} opportunity</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* My Scouts Section */}
-        <div>
-          <h3 className="text-lg font-medium mb-4">My Scouts</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Next Event Spotlight */}
+        {nextEvent && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">Next Event</h2>
+            <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-foreground">{nextEvent.title}</h3>
+                      <div className="flex items-center space-x-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm">
+                          <DateTimeDisplay date={nextEvent.startDate} format="EEEE, MMM d" />
+                        </span>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="touch-target">
+                      View Details
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground">{nextEvent.description}</p>
+                  <Button className="w-full touch-target-comfortable">
+                    RSVP for My Scouts
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* My Scouts - Simplified for Mobile */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">My Scouts</h2>
+            <Button variant="outline" size="sm">
+              <Users className="h-4 w-4 mr-2" />
+              View All
+            </Button>
+          </div>
+          
+          <div className="space-y-3">
             {myScouts.map((scout) => (
-              <Card key={scout.id}>
-                <CardHeader>
-                  <CardTitle>{scout.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Age:</span>
-                    <span>{scout.age}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Group:</span>
-                    <span>{scout.groupName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Rank:</span>
-                    <span>{scout.rank}</span>
+              <Card key={scout.id} className="quick-action-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-lg font-bold text-primary">
+                          {scout.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">{scout.name}</h3>
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                          <span>{scout.groupName}</span>
+                          <span>•</span>
+                          <span>{scout.rank}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
+                        <Award className="h-4 w-4 text-success" />
+                        <span className="text-sm font-medium">3</span>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -89,34 +217,24 @@ export default function ParentDashboard() {
           </div>
         </div>
 
-        {/* Upcoming Events Section */}
-        <div>
-          <h3 className="text-lg font-medium mb-4">Upcoming Events</h3>
-          <div className="space-y-4">
-            {upcomingEvents.map((event) => (
-              <Card key={event.id}>
-                <CardHeader>
-                  <CardTitle>{event.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="text-gray-700">{event.description}</p>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Date:</span>
-                    <span><DateTimeDisplay date={event.startDate} format="MMM dd, yyyy" /></span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Location:</span>
-                    <span>{event.location}</span>
-                  </div>
-                  {event.groupName && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Group:</span>
-                      <span>{event.groupName}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+        {/* Recent Activity */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Recent Activity</h2>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3 p-3 bg-success/5 rounded-lg">
+              <CheckCircle className="h-5 w-5 text-success" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Badge earned: Outdoor Challenge</p>
+                <p className="text-xs text-muted-foreground">2 hours ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-accent/5 rounded-lg">
+              <Bell className="h-5 w-5 text-accent-foreground" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Event reminder: Weekend Camp</p>
+                <p className="text-xs text-muted-foreground">1 day ago</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

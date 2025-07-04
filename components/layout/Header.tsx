@@ -134,6 +134,13 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
           <button
             type="button"
             className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => {
+              // Simple search functionality
+              const searchTerm = prompt("Enter search term:");
+              if (searchTerm) {
+                alert(`Searching for: "${searchTerm}"\n(In a real app, this would open a search modal or navigate to search results)`);
+              }
+            }}
           >
             <span className="sr-only">Search</span>
             <Search className="h-5 w-5" aria-hidden="true" />
@@ -144,6 +151,9 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
             <button
               type="button"
               className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={() => {
+                alert("Notifications:\n\n• New event: Summer Camp - Registration opens tomorrow\n• Achievement earned: Alex completed First Aid Badge\n• Message from Leader: Weekly meeting reminder\n• Permission slip required for Field Day\n\n(In a real app, this would open a notifications panel)");
+              }}
             >
               <span className="sr-only">View notifications</span>
               <Bell className="h-5 w-5" aria-hidden="true" />

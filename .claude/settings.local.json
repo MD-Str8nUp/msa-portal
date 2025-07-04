@@ -26,7 +26,13 @@
       "Bash(npm --version)",
       "Bash(node:*)",
       "Bash(nvm use:*)",
-      "Bash(vercel logs:*)"
+      "Bash(vercel logs:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx typescript tsc:*)",
+      "Bash(curl:*)",
+      "Bash(timeout 15s npm run dev)"
     ],
     "deny": []
   }

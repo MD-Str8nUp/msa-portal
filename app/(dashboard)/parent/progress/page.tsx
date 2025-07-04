@@ -42,6 +42,32 @@ export default function ParentProgressPage() {
     { id: "inc-1", date: "2025-05-15", description: "Minor scraped knee during outdoor activity", severity: "minor" },
     { id: "inc-2", date: "2025-03-10", description: "Verbal disagreement with another scout", severity: "minor" },
   ];
+
+  // Button handlers
+  const handleDownloadAttendanceReport = () => {
+    // Generate CSV data for attendance
+    const csvData = attendanceData.map(record => 
+      `${record.date},${record.event},"${record.present ? 'Present' : 'Absent'}"`
+    ).join('\n');
+    const header = 'Date,Event,Status\n';
+    const csvContent = header + csvData;
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedScout?.name || 'scout'}_attendance_report.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleViewAllAchievements = () => {
+    // For now, show an alert. In a real app, this would navigate to a detailed achievements page
+    alert(`${selectedScout?.name || 'Scout'} has earned ${achievementsData.length} achievements:\n\n${achievementsData.map(a => `• ${a.name} (${formatDate(a.date, "MMM dd, yyyy")})`).join('\n')}`);
+  };
   
   return (
     <DashboardLayout 
@@ -119,7 +145,7 @@ export default function ParentProgressPage() {
                     </table>
                   </div>
                   <div className="mt-4 flex justify-end">
-                    <Button variant="outline">Download Report</Button>
+                    <Button variant="outline" onClick={handleDownloadAttendanceReport}>Download Report</Button>
                   </div>
                 </TabsContent>
                 
@@ -141,7 +167,7 @@ export default function ParentProgressPage() {
                     ))}
                   </div>
                   <div className="mt-4 flex justify-end">
-                    <Button variant="outline">View All Achievements</Button>
+                    <Button variant="outline" onClick={handleViewAllAchievements}>View All Achievements</Button>
                   </div>
                 </TabsContent>
                 

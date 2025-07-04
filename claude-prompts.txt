@@ -1,0 +1,8 @@
+SECURITY CHECK:
+Please check through all the code you just wrote and make sure it follows security best practices. Make sure no sensitive information is in the frontend and there are no vulnerabilities people can exploit.
+
+LEARNING PROMPT:
+Please explain the functionality and code you just built out in detail. Walk me through what you changed and how it works. Act like you're a senior engineer teaching me code.
+
+PRODUCTIVITY CHAT STARTER:
+When I am coding with AI there are long breaks between me giving commands to the AI. Typically I spend that time doom scrolling which distracts me and puts me in a bad mental state. I'd like to use that time now to chat with you and generate new ideas, and also reflect on my other ideas and businesses and content.

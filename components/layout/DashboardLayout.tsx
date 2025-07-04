@@ -42,7 +42,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
+    <div className="h-screen flex overflow-hidden bg-background">
       {/* Mobile sidebar - improved z-index and styling to match desktop */}
       <div
         className={`fixed inset-0 flex z-50 md:hidden ${
@@ -71,8 +71,8 @@ export default function DashboardLayout({
             </button>
           </div>
 
-          <div className="flex-shrink-0 flex items-center px-4 border-b border-gray-200 h-16">
-            <span className="text-xl font-bold text-blue-600">Scout MS</span>
+          <div className="flex-shrink-0 flex items-center px-4 border-b border-border h-16">
+            <span className="text-xl font-bold text-primary">MSA Portal</span>
           </div>
 
           <div className="flex-1 h-0 overflow-y-auto">
@@ -81,7 +81,7 @@ export default function DashboardLayout({
                 Navigation
               </h2>
             </div>
-            <nav className="px-2 space-y-1">
+            <nav className="px-2 space-y-2">
               {navigation.map((item) => {
                 // Check if current path matches exactly or is a subpath
                 const isActive =
@@ -93,10 +93,10 @@ export default function DashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "group flex items-center px-3 py-2 text-base font-medium rounded-md transition-colors duration-150 ease-in-out",
+                      "group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-all duration-200 touch-target-comfortable",
                       isActive
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     )}
                     onClick={() => setSidebarOpen(false)}
                   >
@@ -104,8 +104,8 @@ export default function DashboardLayout({
                       className={cn(
                         "mr-4 h-6 w-6",
                         isActive
-                          ? "text-blue-500"
-                          : "text-gray-400 group-hover:text-gray-500"
+                          ? "text-primary"
+                          : "text-muted-foreground group-hover:text-accent-foreground"
                       )}
                       aria-hidden="true"
                     />
