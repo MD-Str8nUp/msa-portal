@@ -40,26 +40,38 @@ export default function ParentScoutsPage() {
         const scoutsResponse = await fetch(`/api/scouts?parentId=${parentId}`);
         if (scoutsResponse.ok) {
           const scoutsData = await scoutsResponse.json();
-          setScouts(scoutsData);
+          if (Array.isArray(scoutsData)) {
+            setScouts(scoutsData);
+          } else {
+            console.warn('Scouts API returned non-array, using mock data');
+            setScouts(mockScoutService.getScouts(parentId) || []);
+          }
         } else {
-          // Fallback to mock data if API fails
-          setScouts(mockScoutService.getScouts(parentId));
+          console.warn(`Scouts API failed with status ${scoutsResponse.status}, using mock data`);
+          setScouts(mockScoutService.getScouts(parentId) || []);
         }
         
         // Fetch groups from API
         const groupsResponse = await fetch('/api/groups');
         if (groupsResponse.ok) {
           const groupsData = await groupsResponse.json();
-          setGroups(groupsData);
+          if (Array.isArray(groupsData)) {
+            setGroups(groupsData);
+          } else {
+            console.warn('Groups API returned non-array, using mock data');
+            setGroups(mockGroupService.getGroups() || []);
+          }
         } else {
-          // Fallback to mock data if API fails
-          setGroups(mockGroupService.getGroups());
+          console.warn(`Groups API failed with status ${groupsResponse.status}, using mock data`);
+          setGroups(mockGroupService.getGroups() || []);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        // Fallback to mock data
-        setScouts(mockScoutService.getScouts(parentId));
-        setGroups(mockGroupService.getGroups());
+        // Fallback to mock data with safety checks
+        const mockScouts = mockScoutService.getScouts(parentId);
+        const mockGroups = mockGroupService.getGroups();
+        setScouts(Array.isArray(mockScouts) ? mockScouts : []);
+        setGroups(Array.isArray(mockGroups) ? mockGroups : []);
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +82,7 @@ export default function ParentScoutsPage() {
   
   // Calculate achievements per scout
   const scoutAchievements = useCallback((scoutId: string) => {
-    if (!achievements) return 0;
+    if (!achievements || !Array.isArray(achievements)) return 0;
     return achievements.filter(a => a.scoutId === scoutId).length;
   }, [achievements]);
   
@@ -143,10 +155,19 @@ export default function ParentScoutsPage() {
       const response = await fetch(`/api/scouts?parentId=${parentId}`);
       if (response.ok) {
         const data = await response.json();
-        setScouts(data);
+        if (Array.isArray(data)) {
+          setScouts(data);
+        } else {
+          console.warn('Refresh API returned non-array, using mock data');
+          setScouts(mockScoutService.getScouts(parentId) || []);
+        }
+      } else {
+        console.warn('Refresh API failed, using mock data');
+        setScouts(mockScoutService.getScouts(parentId) || []);
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
+      setScouts(mockScoutService.getScouts(parentId) || []);
     } finally {
       setIsLoading(false);
     }
@@ -226,7 +247,7 @@ export default function ParentScoutsPage() {
                     </div>
                     <div className="flex items-center text-sm text-green-600">
                       <Calendar size={16} className="mr-1" />
-                      <span>{scout.attendance ? Math.round((scout.attendance.filter(a => a.present).length / scout.attendance.length) * 100) + '%' : '90%'} Attendance</span>
+                      <span>{scout.attendance && Array.isArray(scout.attendance) && scout.attendance.length > 0 ? Math.round((scout.attendance.filter(a => a.present).length / scout.attendance.length) * 100) + '%' : '90%'} Attendance</span>
                     </div>
                   </div>
                 </CardContent>

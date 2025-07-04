@@ -15,20 +15,7 @@ interface HeaderProps {
 }
 
 export default function Header({ setSidebarOpenAction, pageTitle, userRole = "parent" }: HeaderProps) {
-  console.log('Header rendering', new Date().getTime());
-  
   const router = useRouter();
-  
-  // Render count tracking to detect infinite loops
-  const renderCount = useRef(0);
-  useEffect(() => {
-    renderCount.current += 1;
-    console.log(`Header render count: ${renderCount.current}`);
-    if (renderCount.current > 50) {
-      console.error('Too many renders, stopping to prevent crash');
-      return;
-    }
-  });
   
   // For parent role
   const [selectedScoutId, setSelectedScoutId] = useState<string | null>(null);
@@ -43,12 +30,10 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
   
   // Use memoized callbacks to prevent unnecessary re-renders
   const handleScoutChange = useCallback((scoutId: string) => {
-    console.trace('setSelectedScoutId called from:');
     setSelectedScoutId(scoutId);
   }, []);
   
   const handleGroupChange = useCallback((groupId: string) => {
-    console.trace('setSelectedGroupId called from:');
     setSelectedGroupId(groupId);
   }, []);
   
@@ -56,39 +41,42 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
     setSidebarOpenAction(true);
   }, [setSidebarOpenAction]);
 
-  // Initialize data only once when component mounts or when user role changes
-  // Use empty dependency array to run only once on mount
+  // Initialize data only once when component mounts
   useEffect(() => {
     // Only run this effect if userRole and currentUser are defined
     if (!userRole || !currentUser) return;
     
-    // If parent, get their scouts
-    if (userRole === "parent") {
-      const parentScouts = mockScoutService.getScouts(currentUser.id);
-      setMyScouts(parentScouts);
-      
-      // Only set selectedScoutId if there are scouts
-      if (parentScouts.length > 0) {
-        setSelectedScoutId(parentScouts[0].id);
+    try {
+      // If parent, get their scouts
+      if (userRole === "parent") {
+        const parentScouts = mockScoutService.getScouts(currentUser.id);
+        if (Array.isArray(parentScouts)) {
+          setMyScouts(parentScouts);
+          
+          // Only set selectedScoutId if there are scouts
+          if (parentScouts.length > 0) {
+            setSelectedScoutId(parentScouts[0].id);
+          }
+        }
       }
-    }
-    
-    // If leader, get their groups
-    if (userRole === "leader") {
-      const groups = mockGroupService.getGroups();
-      // Filter groups by leader ID in a real app
-      setMyGroups(groups); 
       
-      // Only set selectedGroupId if there are groups
-      if (groups.length > 0) {
-        setSelectedGroupId(groups[0].id);
+      // If leader, get their groups
+      if (userRole === "leader") {
+        const groups = mockGroupService.getGroups();
+        if (Array.isArray(groups)) {
+          setMyGroups(groups); 
+          
+          // Only set selectedGroupId if there are groups
+          if (groups.length > 0) {
+            setSelectedGroupId(groups[0].id);
+          }
+        }
       }
+    } catch (error) {
+      console.error('Error initializing header data:', error);
     }
-    
-    // Empty dependency array to run only once on mount
-    // This prevents infinite re-render loops completely
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userRole, currentUser?.id]);
 
   return (
     <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm">
