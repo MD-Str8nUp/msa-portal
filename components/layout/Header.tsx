@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Menu, Bell, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import ChildSelector from "@/components/selectors/ChildSelector";
 import GroupSelector from "@/components/selectors/GroupSelector";
 import UserMenu from "@/components/ui/UserMenu";
@@ -79,10 +80,10 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
   }, [userRole, currentUser?.id]);
 
   return (
-    <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm">
+    <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-msa-soft-white shadow-sm border-b border-msa-light-sage/30">
       <button
         type="button"
-        className="px-4 border-r border-gray-200 text-gray-500 md:hidden focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+        className="px-4 border-r border-msa-light-sage/30 text-msa-sage hover:text-msa-forest md:hidden focus:outline-none focus:ring-2 focus:ring-inset focus:ring-msa-sage"
         onClick={handleSidebarOpen}
       >
         <span className="sr-only">Open sidebar</span>
@@ -91,9 +92,38 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
       
       <div className="flex-1 px-4 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-gray-800 truncate">
-            {pageTitle}
-          </h1>
+          {/* MSA Logo and Branding */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/msa-logo-horizontal.png"
+              alt="Mi'raj Scouts Academy"
+              width={120}
+              height={40}
+              className="hidden md:block h-8 w-auto"
+              priority
+            />
+            <Image
+              src="/images/msa-logo-small.png"
+              alt="MSA"
+              width={32}
+              height={32}
+              className="md:hidden h-8 w-8"
+              priority
+            />
+            <div className="hidden lg:block border-l border-msa-light-sage/50 pl-3">
+              <h1 className="text-lg font-semibold text-msa-charcoal font-primary">
+                {pageTitle}
+              </h1>
+              <p className="text-xs text-msa-sage font-arabic">
+                السلام عليكم • Assalamu Alaikum
+              </p>
+            </div>
+            <div className="lg:hidden">
+              <h1 className="text-lg font-semibold text-msa-charcoal font-primary truncate">
+                {pageTitle}
+              </h1>
+            </div>
+          </div>
           
           {/* Conditional selector based on role */}
           {userRole === "parent" && myScouts.length > 0 && (
@@ -121,7 +151,7 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
           {/* Search button */}
           <button
             type="button"
-            className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="p-2 rounded-full text-msa-sage hover:text-msa-forest hover:bg-msa-light-sage/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-msa-sage transition-colors duration-200"
             onClick={() => {
               // Simple search functionality
               const searchTerm = prompt("Enter search term:");
@@ -138,16 +168,16 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
           <div className="relative">
             <button
               type="button"
-              className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="p-2 rounded-full text-msa-sage hover:text-msa-forest hover:bg-msa-light-sage/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-msa-sage transition-colors duration-200"
               onClick={() => {
-                alert("Notifications:\n\n• New event: Summer Camp - Registration opens tomorrow\n• Achievement earned: Alex completed First Aid Badge\n• Message from Leader: Weekly meeting reminder\n• Permission slip required for Field Day\n\n(In a real app, this would open a notifications panel)");
+                alert("بسم الله - Notifications:\n\n• New event: Summer Camp - Registration opens tomorrow\n• Achievement earned: Alex completed First Aid Badge\n• Message from Leader: Weekly meeting reminder\n• Permission slip required for Field Day\n\n(In a real app, this would open a notifications panel)");
               }}
             >
               <span className="sr-only">View notifications</span>
               <Bell className="h-5 w-5" aria-hidden="true" />
             </button>
-            {/* Notification badge */}
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
+            {/* Notification badge - MSA Golden Yellow */}
+            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-msa-golden ring-2 ring-msa-soft-white"></span>
           </div>
 
           {/* User profile dropdown */}

@@ -1,50 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&family=Merriweather:wght@400;700&family=Amiri:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Warm scouting community colors */
-  --background: 42 39% 97%;
-  --foreground: 120 27% 8%;
+  /* Mi'raj Scouts Academy Brand Colors */
   
-  --card: 0 0% 100%;
-  --card-foreground: 120 27% 8%;
+  /* PRIMARY BRAND COLORS */
+  --msa-sage-green: 188 22% 45%;        /* #5F8A8B - Main brand color */
+  --msa-forest-green: 106 20% 34%;      /* #4A6741 - Secondary brand */
+  --msa-golden-yellow: 45 66% 52%;      /* #D4AF37 - Accent/CTA buttons */
+  --msa-deep-teal: 178 36% 26%;         /* #2C5F5D - Dark accents */
+  --msa-warm-brown: 38 24% 44%;         /* #8B7355 - Earth tones */
   
-  --popover: 0 0% 100%;
-  --popover-foreground: 120 27% 8%;
+  /* SECONDARY BRAND COLORS */
+  --msa-light-sage: 120 25% 72%;        /* #A8C5A8 - Light backgrounds */
+  --msa-cream: 60 56% 91%;              /* #F5F5DC - Main background */
+  --msa-charcoal: 210 8% 19%;           /* #2D3436 - Primary text */
+  --msa-soft-white: 0 0% 99%;           /* #FEFEFE - Cards/surfaces */
   
-  /* Primary - Forest Green */
-  --primary: 120 38% 34%;
-  --primary-foreground: 0 0% 98%;
+  /* TYPOGRAPHY FAMILIES */
+  --msa-font-primary: 'Montserrat', sans-serif;     /* Headers, navigation */
+  --msa-font-secondary: 'Open Sans', sans-serif;    /* Body text, readable */
+  --msa-font-accent: 'Merriweather', serif;         /* Special headings */
+  --msa-font-arabic: 'Amiri', serif;                /* Arabic text elements */
   
-  /* Secondary - Warm Beige */
-  --secondary: 42 39% 92%;
-  --secondary-foreground: 120 27% 8%;
+  /* SHADCN/UI COMPATIBLE MAPPING */
+  --background: 60 56% 91%;              /* MSA Cream */
+  --foreground: 210 8% 19%;              /* MSA Charcoal */
   
-  /* Muted - Light earth tone */
-  --muted: 42 39% 94%;
-  --muted-foreground: 120 27% 45%;
+  --card: 0 0% 99%;                      /* MSA Soft White */
+  --card-foreground: 210 8% 19%;         /* MSA Charcoal */
   
-  /* Accent - Scout Blue */
-  --accent: 210 100% 92%;
-  --accent-foreground: 210 100% 20%;
+  --popover: 0 0% 99%;                   /* MSA Soft White */
+  --popover-foreground: 210 8% 19%;      /* MSA Charcoal */
+  
+  /* Primary - MSA Sage Green */
+  --primary: 188 22% 45%;                /* MSA Sage Green */
+  --primary-foreground: 0 0% 99%;        /* MSA Soft White */
+  
+  /* Secondary - MSA Light Sage */
+  --secondary: 120 25% 72%;              /* MSA Light Sage */
+  --secondary-foreground: 210 8% 19%;    /* MSA Charcoal */
+  
+  /* Muted - Light MSA Cream */
+  --muted: 60 56% 95%;                   /* Lighter MSA Cream */
+  --muted-foreground: 210 8% 45%;        /* Lighter MSA Charcoal */
+  
+  /* Accent - MSA Golden Yellow */
+  --accent: 45 66% 52%;                  /* MSA Golden Yellow */
+  --accent-foreground: 210 8% 19%;       /* MSA Charcoal */
   
   /* Destructive - Muted red */
   --destructive: 0 60% 50%;
   --destructive-foreground: 0 0% 98%;
   
-  /* Success - Nature green */
-  --success: 142 71% 45%;
-  --success-foreground: 0 0% 98%;
+  /* Success - MSA Forest Green */
+  --success: 106 20% 34%;                /* MSA Forest Green */
+  --success-foreground: 0 0% 99%;        /* MSA Soft White */
   
-  /* Warning - Warm orange */
-  --warning: 32 95% 44%;
-  --warning-foreground: 0 0% 98%;
+  /* Warning - MSA Golden Yellow (darker) */
+  --warning: 45 66% 45%;                 /* Darker MSA Golden Yellow */
+  --warning-foreground: 0 0% 99%;        /* MSA Soft White */
   
   /* Borders and inputs */
-  --border: 42 39% 85%;
-  --input: 42 39% 85%;
-  --ring: 120 38% 34%;
+  --border: 120 25% 85%;                 /* Light MSA Light Sage */
+  --input: 120 25% 85%;                  /* Light MSA Light Sage */
+  --ring: 188 22% 45%;                   /* MSA Sage Green */
   
   --radius: 0.75rem;
   
@@ -95,12 +118,47 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--msa-font-secondary); /* Open Sans for body text */
   font-size: var(--text-base);
-  line-height: 1.5;
+  line-height: 1.6;
+  font-weight: 400;
 }
+
+/* Typography hierarchy with MSA brand fonts */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--msa-font-primary); /* Montserrat for headings */
+  font-weight: 600;
+  line-height: 1.2;
+  color: hsl(var(--foreground));
+}
+
+.font-accent {
+  font-family: var(--msa-font-accent); /* Merriweather for special headings */
+}
+
+.font-arabic {
+  font-family: var(--msa-font-arabic); /* Amiri for Arabic text */
+}
+
+/* Navigation and button text */
+nav, button, .btn {
+  font-family: var(--msa-font-primary); /* Montserrat */
+}
+
+/* Brand-specific utility classes */
+.text-msa-sage { color: hsl(var(--msa-sage-green)); }
+.text-msa-forest { color: hsl(var(--msa-forest-green)); }
+.text-msa-golden { color: hsl(var(--msa-golden-yellow)); }
+.text-msa-teal { color: hsl(var(--msa-deep-teal)); }
+.text-msa-brown { color: hsl(var(--msa-warm-brown)); }
+
+.bg-msa-sage { background-color: hsl(var(--msa-sage-green)); }
+.bg-msa-forest { background-color: hsl(var(--msa-forest-green)); }
+.bg-msa-golden { background-color: hsl(var(--msa-golden-yellow)); }
+.bg-msa-cream { background-color: hsl(var(--msa-cream)); }
+.bg-msa-light-sage { background-color: hsl(var(--msa-light-sage)); }
 
 /* Mobile-first touch-friendly utilities */
 @layer utilities {

@@ -46,10 +46,28 @@ export default function ParentDashboard() {
       userRole="parent"
     >
       <div className="space-y-6 pb-6">
-        {/* Welcome Section - Mobile Optimized */}
-        <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 rounded-xl p-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Welcome Back!</h1>
-          <p className="text-muted-foreground text-lg">Here's what's happening with your scouts today</p>
+        {/* MSA Islamic Welcome Section - Mobile Optimized */}
+        <div className="bg-gradient-to-r from-msa-sage/10 via-msa-golden/10 to-msa-light-sage/20 rounded-xl p-6 border border-msa-light-sage/30">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="text-2xl">🌙</div>
+            <div>
+              <h1 className="text-2xl font-bold text-msa-charcoal mb-1 font-primary">
+                Assalamu Alaikum!
+              </h1>
+              <p className="text-sm text-msa-sage font-arabic">
+                السلام عليكم ورحمة الله وبركاته
+              </p>
+            </div>
+          </div>
+          <p className="text-msa-charcoal/80 text-lg font-secondary">
+            Welcome to Mi'raj Scouts Academy. Here's what's happening with your scouts today.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <Heart className="h-4 w-4 text-msa-golden" />
+            <span className="text-sm text-msa-sage font-arabic">
+              بارك الله فيكم • May Allah bless your family
+            </span>
+          </div>
         </div>
 
         {/* Priority Actions - Mobile First */}

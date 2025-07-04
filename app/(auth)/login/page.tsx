@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { mockAuthService } from "@/lib/mock/data";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Heart, Moon } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -128,11 +130,41 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-msa-cream via-msa-light-sage/20 to-msa-sage/10">
+      <div className="max-w-md w-full space-y-8 p-8 bg-msa-soft-white rounded-xl shadow-xl border border-msa-light-sage/30">
+        {/* MSA Header */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Scout Management System</h1>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <div className="mb-6">
+            <Image
+              src="/images/msa-logo-large.png"
+              alt="Mi'raj Scouts Academy"
+              width={200}
+              height={80}
+              className="mx-auto h-20 w-auto"
+              priority
+            />
+          </div>
+          
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-msa-charcoal font-primary">
+              Mi'raj Scouts Academy Portal
+            </h1>
+            <p className="text-sm text-msa-sage font-arabic mt-1">
+              مدرسة الكشافة - مرحباً بكم
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Moon className="h-5 w-5 text-msa-golden" />
+            <p className="text-msa-charcoal/80 font-secondary">
+              Assalamu Alaikum! Sign in to your account
+            </p>
+            <Heart className="h-4 w-4 text-msa-golden" />
+          </div>
+          
+          <div className="text-xs text-msa-sage font-arabic">
+            السلام عليكم ورحمة الله وبركاته
+          </div>
         </div>
         
         {error && (
@@ -176,41 +208,67 @@ export default function LoginPage() {
           <div>
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium"
+              variant="msa-primary"
+              className="w-full py-3 text-lg font-medium"
               isLoading={isLoading}
             >
-              Sign in
+              بسم الله - Sign In
             </Button>
           </div>
         </form>
         
-        <div className="mt-6">
-          <p className="text-center text-sm text-gray-600">
-            Quick demo login:
-          </p>
-          <div className="flex justify-center space-x-2 mt-2">            <Button 
-              variant="outline" 
+        <div className="mt-6 border-t border-msa-light-sage/30 pt-6">
+          <div className="text-center mb-3">
+            <p className="text-sm text-msa-charcoal font-secondary">
+              Quick demo login:
+            </p>
+            <p className="text-xs text-msa-sage font-arabic">
+              دخول سريع للتجربة
+            </p>
+          </div>
+          <div className="flex justify-center space-x-2 mt-3">
+            <Button 
+              variant="msa-outline" 
               size="sm"
               onClick={() => handleQuickLogin("parent")}
               disabled={isLoading}
+              className="font-primary"
             >
-              Parent
-            </Button>            <Button 
-              variant="outline" 
+              👨‍👩‍👧‍👦 Parent
+            </Button>
+            <Button 
+              variant="msa-outline" 
               size="sm"
               onClick={() => handleQuickLogin("leader")}
               disabled={isLoading}
+              className="font-primary"
             >
-              Leader
-            </Button>            <Button 
-              variant="outline" 
+              🧑‍🏫 Leader
+            </Button>
+            <Button 
+              variant="msa-outline" 
               size="sm"
               onClick={() => handleQuickLogin("executive")}
               disabled={isLoading}
+              className="font-primary"
             >
-              Executive
+              👔 Executive
             </Button>
           </div>
+        </div>
+        
+        {/* Islamic Footer */}
+        <div className="text-center border-t border-msa-light-sage/30 pt-4">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Heart className="h-4 w-4 text-msa-golden" />
+            <span className="text-xs text-msa-sage font-arabic">
+              بارك الله فيكم
+            </span>
+            <Heart className="h-4 w-4 text-msa-golden" />
+          </div>
+          <p className="text-xs text-msa-charcoal/60 font-secondary">
+            May Allah bless your scouting journey
+          </p>
         </div>
       </div>
     </div>
