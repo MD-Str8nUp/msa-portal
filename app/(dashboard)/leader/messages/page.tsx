@@ -27,6 +27,9 @@ export default function LeaderMessagesPage() {
   // States
   const [selectedParentId, setSelectedParentId] = useState<string | null>(parents.length > 0 ? parents[0].id : null);
   const [messageText, setMessageText] = useState("");
+  const [showGroupAnnouncement, setShowGroupAnnouncement] = useState(false);
+  const [announcementText, setAnnouncementText] = useState("");
+  const [groupAnnouncements, setGroupAnnouncements] = useState<any[]>([]);
   const [conversations, setConversations] = useState<Record<string, any[]>>(() => {
     // Group messages by conversation partner
     const convos: Record<string, any[]> = {};
@@ -82,6 +85,28 @@ export default function LeaderMessagesPage() {
     setMessageText("");
   };
   
+  // Send group announcement
+  const sendGroupAnnouncement = () => {
+    if (!announcementText.trim()) return;
+    
+    const announcement = {
+      id: `announcement-${Date.now()}`,
+      senderId: currentUserId,
+      content: announcementText,
+      timestamp: new Date().toISOString(),
+      type: 'group_announcement',
+      groupId: groupId,
+      recipientCount: parents.length
+    };
+    
+    setGroupAnnouncements(prev => [announcement, ...prev]);
+    setAnnouncementText("");
+    setShowGroupAnnouncement(false);
+    
+    // In a real app, this would send the announcement to all parents
+    console.log('Group announcement sent to', parents.length, 'parents');
+  };
+  
   return (
     <DashboardLayout 
       navigation={leaderNavigation}
@@ -91,7 +116,35 @@ export default function LeaderMessagesPage() {
       <div className="flex h-[calc(100vh-64px)]">
         {/* Parents list (left sidebar) */}
         <div className="w-1/4 border-r p-4 overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4">Parents</h2>
+          {/* Group Announcements Section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold">Group Announcements</h2>
+              <Button 
+                size="sm"
+                onClick={() => setShowGroupAnnouncement(true)}
+                className="bg-msa-sage hover:bg-msa-sage/90 text-white text-xs px-2 py-1"
+              >
+                + New
+              </Button>
+            </div>
+            <div 
+              className={`p-3 rounded-md cursor-pointer border-2 ${selectedParentId === 'announcements' ? 'bg-msa-sage/10 border-msa-sage' : 'border-gray-200 hover:bg-gray-50'}`}
+              onClick={() => setSelectedParentId('announcements')}
+            >
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-msa-sage/20 flex items-center justify-center mr-3">
+                  📢
+                </div>
+                <div>
+                  <p className="font-medium">Group Announcements</p>
+                  <p className="text-sm text-gray-500">{groupAnnouncements.length} sent</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <h2 className="text-lg font-semibold mb-4">Individual Conversations</h2>
           <div className="space-y-2">
             {parents.map(parent => (
               <div 
@@ -119,7 +172,51 @@ export default function LeaderMessagesPage() {
         
         {/* Messages area (right side) */}
         <div className="w-3/4 flex flex-col">
-          {selectedParentId ? (
+          {selectedParentId === 'announcements' ? (
+            <>
+              {/* Group Announcements View */}
+              <div className="border-b p-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-msa-sage/20 flex items-center justify-center mr-3">
+                    📢
+                  </div>
+                  <div>
+                    <p className="font-medium">Group Announcements</p>
+                    <p className="text-sm text-gray-500">Send announcements to all {parents.length} parents</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Announcements List */}
+              <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-gray-50">
+                {groupAnnouncements.length > 0 ? (
+                  groupAnnouncements.map((announcement) => (
+                    <div key={announcement.id} className="bg-white border rounded-lg p-4 shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
+                          <span className="bg-msa-sage text-white text-xs px-2 py-1 rounded-full mr-2">
+                            Announcement
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            Sent to {announcement.recipientCount} parents
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {formatDate(announcement.timestamp, "MMM dd, h:mm a")}
+                        </span>
+                      </div>
+                      <p className="text-gray-800">{announcement.content}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No group announcements sent yet</p>
+                    <p className="text-sm">Click "New" to send your first announcement</p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : selectedParentId ? (
             <>
               {/* Selected parent header */}
               <div className="border-b p-4">
@@ -197,6 +294,58 @@ export default function LeaderMessagesPage() {
             </div>
           )}
         </div>
+        
+        {/* Group Announcement Modal */}
+        {showGroupAnnouncement && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Send Group Announcement</h2>
+                <button 
+                  onClick={() => setShowGroupAnnouncement(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  This announcement will be sent to all {parents.length} parents in your group.
+                </p>
+                <div className="bg-msa-sage/10 border border-msa-sage/20 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-msa-charcoal font-medium">📢 Islamic Reminder:</p>
+                  <p className="text-xs text-msa-sage">"And speak to them a word of appropriate kindness" - Quran 17:23</p>
+                </div>
+                <textarea
+                  value={announcementText}
+                  onChange={(e) => setAnnouncementText(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                  rows={4}
+                  placeholder="Type your announcement message here..."
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowGroupAnnouncement(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={sendGroupAnnouncement}
+                  className="bg-msa-sage hover:bg-msa-sage/90 text-white"
+                >
+                  Send to All Parents
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

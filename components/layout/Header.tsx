@@ -114,8 +114,8 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
               <h1 className="text-lg font-semibold text-msa-charcoal font-primary">
                 {pageTitle}
               </h1>
-              <p className="text-xs text-msa-sage font-arabic">
-                السلام عليكم • Assalamu Alaikum
+              <p className="text-xs text-msa-sage">
+                Assalamu Alaikum
               </p>
             </div>
             <div className="lg:hidden">

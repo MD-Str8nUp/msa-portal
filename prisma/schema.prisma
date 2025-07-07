@@ -1,33 +1,42 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// MSA Portal - Supabase PostgreSQL Schema
+// Converted from Zane's MongoDB schema to work with Supabase
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
+  output   = "./generated/client"
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   name           String
   email          String    @unique
   password       String
-  role           String    // "parent", "leader", "executive"
+  role           String    // "parent", "leader", "executive", "parent_leader", "support"
   avatar         String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   
+  // Multi-role support for parent_leaders
+  isParent       Boolean   @default(false)
+  isLeader       Boolean   @default(false)
+  isExecutive    Boolean   @default(false)
+  isSupport      Boolean   @default(false)
+  
+  // Default portal preference for parent_leaders
+  defaultPortal  String?   // "parent" or "leader" - for users with both roles
+  
   // Relations
   scouts         Scout[]   @relation("ParentToScout")
-  messages       Message[] @relation("UserMessages")
   sentMessages   Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   leaderGroups   UserGroup[] @relation("UserToGroup")
   attendance     Attendance[] @relation("UserAttendance")
+  incidentReports IncidentReport[] @relation("UserIncidentReports")
 
   // Online status
   lastSeen       DateTime  @default(now())
@@ -35,25 +44,25 @@ model User {
 }
 
 model Scout {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   name           String
   age            Int
   rank           String
   joinedDate     DateTime  @default(now())
-  parentId       String    @db.ObjectId
-  groupId        String    @db.ObjectId
+  parentId       String
+  groupId        String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   
   // Relations
-  parent         User      @relation("ParentToScout", fields: [parentId], references: [id])
-  group          Group     @relation(fields: [groupId], references: [id])
+  parent         User      @relation("ParentToScout", fields: [parentId], references: [id], onDelete: Cascade)
+  group          Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   achievements   Achievement[]
   attendance     Attendance[] @relation("ScoutAttendance")
 }
 
 model Group {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   name           String    @unique
   description    String?
   createdAt      DateTime  @default(now())
@@ -63,69 +72,69 @@ model Group {
   scouts         Scout[]
   groupLeaders   UserGroup[] @relation("GroupToUser")
   events         Event[]   @relation("GroupEvents")
+  incidentReports IncidentReport[] @relation("GroupIncidentReports")
 }
 
 model Event {
-  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  id                  String    @id @default(cuid())
   title               String
   description         String
   location            String
   startDate           DateTime
   endDate             DateTime
-  groupId             String?   @db.ObjectId
+  groupId             String?
   requiresPermissionSlip Boolean @default(false)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   
   // Relations
-  group               Group?    @relation("GroupEvents", fields: [groupId], references: [id])
+  group               Group?    @relation("GroupEvents", fields: [groupId], references: [id], onDelete: SetNull)
   attendances         Attendance[]
 }
 
 model Message {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   content        String
-  senderId       String    @db.ObjectId
-  receiverId     String    @db.ObjectId
+  senderId       String
+  receiverId     String
   read           Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   
   // Relations
-  user           User      @relation("UserMessages", fields: [senderId], references: [id])
-  sender         User      @relation("SentMessages", fields: [senderId], references: [id])
-  receiver       User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender         User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver       User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 }
 
 model Achievement {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   name           String
   description    String
   dateEarned     DateTime  @default(now())
-  scoutId        String    @db.ObjectId
+  scoutId        String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   
   // Relations
-  scout          Scout     @relation(fields: [scoutId], references: [id])
+  scout          Scout     @relation(fields: [scoutId], references: [id], onDelete: Cascade)
 }
 
 model Attendance {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  scoutId        String    @db.ObjectId
-  userId         String    @db.ObjectId
-  eventId        String    @db.ObjectId
+  id             String    @id @default(cuid())
+  scoutId        String
+  userId         String
+  eventId        String
   status         String    // "present", "absent", "excused"
   date           DateTime  @default(now())
   
   // Relations
-  scout          Scout     @relation("ScoutAttendance", fields: [scoutId], references: [id])
-  user           User      @relation("UserAttendance", fields: [userId], references: [id])
-  event          Event     @relation(fields: [eventId], references: [id])
+  scout          Scout     @relation("ScoutAttendance", fields: [scoutId], references: [id], onDelete: Cascade)
+  user           User      @relation("UserAttendance", fields: [userId], references: [id], onDelete: Cascade)
+  event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model Document {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   title          String
   fileUrl        String
   fileType       String
@@ -139,7 +148,7 @@ model Document {
 }
 
 model Report {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   title          String
   type           String    // "attendance", "achievement", "financial", etc.
   date           DateTime  @default(now())
@@ -149,16 +158,37 @@ model Report {
   updatedAt      DateTime  @updatedAt
 }
 
+model IncidentReport {
+  id             String    @id @default(cuid())
+  title          String
+  description    String
+  severity       String    // "low", "medium", "high", "critical"
+  status         String    // "open", "investigating", "resolved", "closed"
+  reportedBy     String
+  assignedTo     String?
+  location       String?
+  dateOccurred   DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  reporter       User      @relation("UserIncidentReports", fields: [reportedBy], references: [id], onDelete: Cascade)
+  
+  // Optional group association (support users won't have group access)
+  groupId        String?
+  group          Group?    @relation("GroupIncidentReports", fields: [groupId], references: [id], onDelete: SetNull)
+}
+
 model UserGroup {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String    @db.ObjectId
-  groupId        String    @db.ObjectId
+  id             String    @id @default(cuid())
+  userId         String
+  groupId        String
   role           String    // "leader", "assistant", etc.
   createdAt      DateTime  @default(now())
   
   // Relations
-  user           User      @relation("UserToGroup", fields: [userId], references: [id])
-  group          Group     @relation("GroupToUser", fields: [groupId], references: [id])
+  user           User      @relation("UserToGroup", fields: [userId], references: [id], onDelete: Cascade)
+  group          Group     @relation("GroupToUser", fields: [groupId], references: [id], onDelete: Cascade)
   
   @@unique([userId, groupId])
 }

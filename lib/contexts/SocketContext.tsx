@@ -180,7 +180,20 @@ export function useSocketContext() {
   const context = useContext(SocketContext);
   
   if (context === undefined) {
-    throw new Error('useSocketContext must be used within a SocketProvider');
+    // Return default values instead of throwing error to prevent app crashes
+    console.warn('useSocketContext used outside of SocketProvider, returning default values');
+    return {
+      isConnected: false,
+      onlineUsers: [],
+      sendMessage: () => false,
+      updateEventRSVP: () => false,
+      updateScoutProgress: () => false,
+      uploadDocument: () => false,
+      messages: [],
+      events: [],
+      documents: [],
+      achievements: [],
+    };
   }
   
   return context;

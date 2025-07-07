@@ -45,10 +45,24 @@ export default function ExecutiveDashboard() {
       userRole="executive"
     >
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div>
-          <h2 className="text-2xl font-semibold">Executive Overview</h2>
-          <p className="text-gray-500">Organization-wide metrics and management</p>
+        {/* MSA Islamic Welcome Section */}
+        <div className="bg-gradient-to-r from-msa-sage/10 via-msa-golden/10 to-msa-light-sage/20 rounded-xl p-6 border border-msa-light-sage/30">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="text-2xl">🌙</div>
+            <div>
+              <h2 className="text-2xl font-bold text-msa-charcoal mb-1 font-primary">
+                Assalamu Alaikum, Executive!
+              </h2>
+            </div>
+          </div>
+          <p className="text-msa-charcoal/80 text-lg font-secondary">
+            Leading Mi'raj Scouts Academy - Organization-wide metrics and management
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-sm text-msa-sage">
+              May Allah bless your guidance
+            </span>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -102,7 +116,7 @@ export default function ExecutiveDashboard() {
                       <p className="text-sm text-gray-500">{group.location}</p>
                     </div>
                     <div className="text-right">
-                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      <span className="inline-block px-2 py-1 bg-msa-sage/20 text-msa-sage rounded-full text-xs">
                         {group.memberCount} members
                       </span>
                     </div>
@@ -123,7 +137,7 @@ export default function ExecutiveDashboard() {
                 {membershipData.map((item) => (
                   <div key={item.month} className="flex flex-col items-center flex-1">
                     <div 
-                      className="w-full bg-green-500 rounded-t" 
+                      className="w-full bg-msa-forest rounded-t" 
                       style={{ height: `${item.count * 1.2}%` }}
                     ></div>
                     <span className="text-xs mt-1">{item.month}</span>
@@ -147,7 +161,7 @@ export default function ExecutiveDashboard() {
                     <h4 className="font-medium">{report.title}</h4>
                     <p className="text-sm text-gray-500">{report.date}</p>
                   </div>
-                  <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                  <span className="inline-block px-2 py-1 bg-msa-light-sage/30 text-msa-charcoal rounded-full text-xs">
                     {report.type}
                   </span>
                 </div>

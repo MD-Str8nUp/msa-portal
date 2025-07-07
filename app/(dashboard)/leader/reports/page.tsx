@@ -13,16 +13,58 @@ import { formatDate } from "@/lib/utils";
 export default function LeaderReportsPage() {
   const [activeTab, setActiveTab] = useState("incidents");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newReport, setNewReport] = useState({
+    type: 'incident',
+    title: '',
+    description: '',
+    scoutName: '',
+    severity: 'low',
+    category: 'behavior'
+  });
+  const [reports, setReports] = useState(mockReports);
   
   // Helper to filter reports by type and search term
   const filterReports = (type: string) => {
-    return mockReports
+    return reports
       .filter(report => 
         report.type === type && 
         (report.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
          report.description.toLowerCase().includes(searchTerm.toLowerCase()))
       )
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  // Handle creating new report
+  const handleCreateReport = () => {
+    if (!newReport.title || !newReport.description) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const report = {
+      id: `report-${Date.now()}`,
+      type: newReport.type,
+      title: newReport.title,
+      description: newReport.description,
+      date: new Date().toISOString(),
+      status: 'pending',
+      scoutName: newReport.scoutName,
+      severity: newReport.severity,
+      category: newReport.category,
+      createdBy: 'current-leader' // Would be from auth context
+    };
+
+    setReports(prev => [report, ...prev]);
+    setShowCreateModal(false);
+    setNewReport({
+      type: 'incident',
+      title: '',
+      description: '',
+      scoutName: '',
+      severity: 'low',
+      category: 'behavior'
+    });
   };
   
   // Get filtered reports by type
@@ -40,7 +82,12 @@ export default function LeaderReportsPage() {
         {/* Page header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Report Management</h1>
-          <Button>Create New Report</Button>
+          <Button 
+            onClick={() => setShowCreateModal(true)}
+            className="bg-msa-sage hover:bg-msa-sage/90 text-white"
+          >
+            Create New Report
+          </Button>
         </div>
         
         {/* Search bar */}
@@ -223,6 +270,140 @@ export default function LeaderReportsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Create Report Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Create New Report</h2>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Report Type *
+                  </label>
+                  <select
+                    value={newReport.type}
+                    onChange={(e) => setNewReport(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                  >
+                    <option value="incident">Incident Report</option>
+                    <option value="activity">Activity Report</option>
+                    <option value="progress">Progress Report</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={newReport.title}
+                    onChange={(e) => setNewReport(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    placeholder="Enter report title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description *
+                  </label>
+                  <textarea
+                    value={newReport.description}
+                    onChange={(e) => setNewReport(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    rows={4}
+                    placeholder="Provide detailed description"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Scout Name (if applicable)
+                  </label>
+                  <input
+                    type="text"
+                    value={newReport.scoutName}
+                    onChange={(e) => setNewReport(prev => ({ ...prev, scoutName: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    placeholder="Enter scout name"
+                  />
+                </div>
+
+                {newReport.type === 'incident' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Severity Level
+                      </label>
+                      <select
+                        value={newReport.severity}
+                        onChange={(e) => setNewReport(prev => ({ ...prev, severity: e.target.value }))}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={newReport.category}
+                        onChange={(e) => setNewReport(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                      >
+                        <option value="behavior">Behavior</option>
+                        <option value="safety">Safety</option>
+                        <option value="injury">Injury</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                <div className="bg-msa-sage/10 border border-msa-sage/20 rounded-lg p-3">
+                  <p className="text-sm text-msa-charcoal font-medium">📝 Islamic Guidance:</p>
+                  <p className="text-xs text-msa-sage">"And it is He who created the heavens and earth in truth. And the day He says, 'Be,' and it is, His word is the truth." - Quran 6:73</p>
+                  <p className="text-xs text-msa-sage mt-1">Report truthfully and with justice.</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateReport}
+                  className="bg-msa-sage hover:bg-msa-sage/90 text-white"
+                >
+                  Create Report
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

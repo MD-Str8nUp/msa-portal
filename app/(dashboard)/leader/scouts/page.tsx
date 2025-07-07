@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { Input } from "@/components/ui/Input";
 import { Scout } from "@/types";
+import AchievementRecordingModal from "@/components/leader/AchievementRecordingModal";
 
 export default function LeaderScoutsPage() {
   // In a real app, this would come from auth context/session
@@ -25,11 +26,26 @@ export default function LeaderScoutsPage() {
   // State for search and selected scout
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedScout, setSelectedScout] = useState<Scout | null>(null);
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
+  const [achievements, setAchievements] = useState<any[]>([]);
   
   // Filter scouts based on search
   const filteredScouts = scouts.filter(scout => 
     scout.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Handle opening achievement modal
+  const openAchievementModal = (scout: Scout) => {
+    setSelectedScout(scout);
+    setShowAchievementModal(true);
+  };
+
+  // Handle recording achievement
+  const handleRecordAchievement = (achievement: any) => {
+    setAchievements(prev => [...prev, achievement]);
+    console.log('Achievement recorded:', achievement);
+    // In a real app, this would save to the database
+  };
 
   return (
     <DashboardLayout 
@@ -100,7 +116,13 @@ export default function LeaderScoutsPage() {
                           <div className="flex space-x-2">
                             <Button variant="outline" size="sm">View</Button>
                             <Button variant="outline" size="sm">Progress</Button>
-                            <Button size="sm">Record Achievement</Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => openAchievementModal(scout)}
+                              className="bg-msa-sage hover:bg-msa-sage/90 text-white"
+                            >
+                              Record Achievement
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -143,6 +165,16 @@ export default function LeaderScoutsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Achievement Recording Modal */}
+        {selectedScout && (
+          <AchievementRecordingModal
+            scout={selectedScout}
+            isOpen={showAchievementModal}
+            onClose={() => setShowAchievementModal(false)}
+            onSubmit={handleRecordAchievement}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

@@ -37,15 +37,8 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
   }
   
   return (
-    <>
-      {user ? (
-        <SocketProvider userId={user.id} userRole={user.role}>
-          {children}
-        </SocketProvider>
-      ) : (
-        // If no user, just render children without socket context
-        children
-      )}
-    </>
+    <SocketProvider userId={user?.id || 'anonymous'} userRole={user?.role || 'guest'}>
+      {children}
+    </SocketProvider>
   );
 }

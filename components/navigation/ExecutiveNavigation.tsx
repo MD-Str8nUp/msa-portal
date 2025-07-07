@@ -7,7 +7,9 @@ import {
   MessageSquare, 
   BarChart2,
   Settings,
-  FileText
+  FileText,
+  DollarSign,
+  Shield
 } from "lucide-react";
 
 export const executiveNavigation = [
@@ -35,6 +37,16 @@ export const executiveNavigation = [
     name: "Events",
     href: "/executive/events",
     icon: Calendar,
+  },
+  {
+    name: "Finance",
+    href: "/executive/finance",
+    icon: DollarSign,
+  },
+  {
+    name: "Admin",
+    href: "/executive/admin",
+    icon: Shield,
   },
   {
     name: "Reports",

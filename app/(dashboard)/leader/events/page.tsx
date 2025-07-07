@@ -21,6 +21,15 @@ export default function LeaderEventsPage() {
   // State for events
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    type: 'meeting'
+  });
   
   // Fetch events from API
   useEffect(() => {
@@ -91,6 +100,37 @@ export default function LeaderEventsPage() {
       status: "completed",
     });
   };
+
+  // Handle creating new event
+  const handleCreateEvent = () => {
+    if (!newEvent.title || !newEvent.startDate || !newEvent.endDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    const event = {
+      id: `event-${Date.now()}`,
+      title: newEvent.title,
+      description: newEvent.description,
+      location: newEvent.location,
+      startDate: newEvent.startDate,
+      endDate: newEvent.endDate,
+      type: newEvent.type,
+      createdBy: leaderId,
+      createdAt: new Date().toISOString()
+    };
+    
+    setEvents(prev => [...prev, event]);
+    setShowCreateModal(false);
+    setNewEvent({
+      title: '',
+      description: '',
+      location: '',
+      startDate: '',
+      endDate: '',
+      type: 'meeting'
+    });
+  };
   
   return (
     <DashboardLayout 
@@ -112,9 +152,12 @@ export default function LeaderEventsPage() {
               <RefreshCcw size={16} className={isLoading ? "animate-spin" : ""} />
               <span>{isLoading ? "Loading..." : "Refresh"}</span>
             </Button>
-            <Button className="flex items-center space-x-2">
+            <Button 
+              onClick={() => setShowCreateModal(true)} 
+              className="flex items-center space-x-2"
+            >
               <Calendar size={16} className="mr-2" />
-              View Calendar
+              Create Event
             </Button>
           </div>
         </div>
@@ -211,6 +254,123 @@ export default function LeaderEventsPage() {
             )}
           </div>
         </div>
+        
+        {/* Create Event Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Create New Event</h2>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    placeholder="Enter event title"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    rows={3}
+                    placeholder="Enter event description"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    placeholder="Enter event location"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Type
+                  </label>
+                  <select
+                    value={newEvent.type}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                  >
+                    <option value="meeting">Group Meeting</option>
+                    <option value="activity">Activity</option>
+                    <option value="camp">Camp</option>
+                    <option value="service">Service Project</option>
+                    <option value="training">Training</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={newEvent.startDate}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={newEvent.endDate}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateEvent}
+                  className="bg-msa-sage hover:bg-msa-sage/90 text-white"
+                >
+                  Create Event
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

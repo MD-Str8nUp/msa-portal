@@ -212,7 +212,7 @@ export default function LoginPage() {
               className="w-full py-3 text-lg font-medium"
               isLoading={isLoading}
             >
-              بسم الله - Sign In
+              Sign In
             </Button>
           </div>
         </form>
@@ -222,8 +222,8 @@ export default function LoginPage() {
             <p className="text-sm text-msa-charcoal font-secondary">
               Quick demo login:
             </p>
-            <p className="text-xs text-msa-sage font-arabic">
-              دخول سريع للتجربة
+            <p className="text-xs text-msa-sage">
+              Quick demo access
             </p>
           </div>
           <div className="flex justify-center space-x-2 mt-3">

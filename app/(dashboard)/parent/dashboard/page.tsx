@@ -54,8 +54,8 @@ export default function ParentDashboard() {
               <h1 className="text-2xl font-bold text-msa-charcoal mb-1 font-primary">
                 Assalamu Alaikum!
               </h1>
-              <p className="text-sm text-msa-sage font-arabic">
-                السلام عليكم ورحمة الله وبركاته
+              <p className="text-sm text-msa-sage">
+                Peace and blessings upon you
               </p>
             </div>
           </div>
@@ -64,8 +64,8 @@ export default function ParentDashboard() {
           </p>
           <div className="mt-3 flex items-center gap-2">
             <Heart className="h-4 w-4 text-msa-golden" />
-            <span className="text-sm text-msa-sage font-arabic">
-              بارك الله فيكم • May Allah bless your family
+            <span className="text-sm text-msa-sage">
+              May Allah bless your family
             </span>
           </div>
         </div>

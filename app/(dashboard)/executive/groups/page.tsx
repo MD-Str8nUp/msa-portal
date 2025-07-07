@@ -1,15 +1,58 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { executiveNavigation } from "@/components/navigation/ExecutiveNavigation";
 import { mockGroupService } from "@/lib/mock/data";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export default function ExecutiveGroupsPage() {
   // Get all groups
-  const groups = mockGroupService.getGroups();
+  const [groups, setGroups] = useState(mockGroupService.getGroups());
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newGroup, setNewGroup] = useState({
+    name: '',
+    location: '',
+    meetingDay: 'Thursday',
+    meetingTime: '6:00 PM',
+    maxMembers: '20',
+    description: ''
+  });
+
+  // Handle creating new group
+  const handleCreateGroup = () => {
+    if (!newGroup.name || !newGroup.location) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const group = {
+      id: `group-${Date.now()}`,
+      name: newGroup.name,
+      location: newGroup.location,
+      meetingDay: newGroup.meetingDay,
+      meetingTime: newGroup.meetingTime,
+      memberCount: 0,
+      leaderName: 'Unassigned',
+      leaderId: null,
+      maxMembers: parseInt(newGroup.maxMembers),
+      description: newGroup.description,
+      createdAt: new Date().toISOString()
+    };
+
+    setGroups(prev => [...prev, group]);
+    setShowCreateModal(false);
+    setNewGroup({
+      name: '',
+      location: '',
+      meetingDay: 'Thursday',
+      meetingTime: '6:00 PM',
+      maxMembers: '20',
+      description: ''
+    });
+  };
   
   return (
     <DashboardLayout 
@@ -24,7 +67,10 @@ export default function ExecutiveGroupsPage() {
             <h2 className="text-2xl font-semibold text-gray-800">Scout Groups</h2>
             <p className="text-gray-500">Manage all scout groups in the organization</p>
           </div>
-          <Button className="flex items-center space-x-2">
+          <Button 
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center space-x-2 bg-msa-sage hover:bg-msa-sage/90 text-white"
+          >
             <span>Create Group</span>
           </Button>
         </div>
@@ -134,6 +180,128 @@ export default function ExecutiveGroupsPage() {
             </Card>
           </div>
         </div>
+
+        {/* Create Group Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Create New Scout Group</h2>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Group Name *
+                  </label>
+                  <Input
+                    value={newGroup.name}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter group name (e.g., Wolf Pack, Eagle Scouts)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Meeting Location *
+                  </label>
+                  <Input
+                    value={newGroup.location}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="Enter meeting location"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meeting Day
+                    </label>
+                    <select
+                      value={newGroup.meetingDay}
+                      onChange={(e) => setNewGroup(prev => ({ ...prev, meetingDay: e.target.value }))}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    >
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                      <option value="Sunday">Sunday</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meeting Time
+                    </label>
+                    <Input
+                      value={newGroup.meetingTime}
+                      onChange={(e) => setNewGroup(prev => ({ ...prev, meetingTime: e.target.value }))}
+                      placeholder="e.g., 6:00 PM"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Maximum Members
+                  </label>
+                  <Input
+                    type="number"
+                    value={newGroup.maxMembers}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, maxMembers: e.target.value }))}
+                    placeholder="20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Group Description
+                  </label>
+                  <textarea
+                    value={newGroup.description}
+                    onChange={(e) => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
+                    rows={3}
+                    placeholder="Describe the group's focus and activities"
+                  />
+                </div>
+
+                <div className="bg-msa-sage/10 border border-msa-sage/20 rounded-lg p-3">
+                  <p className="text-sm text-msa-charcoal font-medium">🕌 Islamic Foundation:</p>
+                  <p className="text-xs text-msa-sage">"And hold firmly to the rope of Allah all together and do not become divided" - Quran 3:103</p>
+                  <p className="text-xs text-msa-sage mt-1">Building Islamic unity through scouting</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateGroup}
+                  className="bg-msa-sage hover:bg-msa-sage/90 text-white"
+                >
+                  Create Group
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
