@@ -4,7 +4,8 @@ import React, { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockScoutService, mockGroupService, mockAuthService } from "@/lib/mock/data";
+import { mockScoutService, mockGroupService } from "@/lib/mock/data";
+import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/Button";
 import { Plus, Info, Award, Calendar, RefreshCcw } from "lucide-react";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
@@ -14,9 +15,9 @@ import { Scout } from "@/types";
 import { useSocketContext } from "@/lib/contexts/SocketContext";
 
 export default function ParentScoutsPage() {
-  // Get current user
-  const currentUser = mockAuthService.getCurrentUser();
-  const parentId = currentUser?.id || "user-1";
+  // State for current user
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [parentId, setParentId] = useState<string>("user-1");
   
   // Get socket context data
   const { isConnected, achievements } = useSocketContext();
@@ -30,6 +31,28 @@ export default function ParentScoutsPage() {
   const [selectedScout, setSelectedScout] = useState<Scout | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  
+  // Fetch current user from real auth service
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await auth.getCurrentUser();
+        if (user && user.id) {
+          setCurrentUser(user);
+          setParentId(user.id);
+        } else {
+          // Fallback for development
+          console.warn('No authenticated user found, using fallback');
+          setParentId("user-1");
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+        setParentId("user-1");
+      }
+    };
+    
+    fetchCurrentUser();
+  }, []);
   
   // Fetch scouts and groups from API
   useEffect(() => {
@@ -77,7 +100,10 @@ export default function ParentScoutsPage() {
       }
     };
     
-    fetchData();
+    // Fetch data when parentId is available
+    if (parentId) {
+      fetchData();
+    }
   }, [parentId]);
   
   // Calculate achievements per scout

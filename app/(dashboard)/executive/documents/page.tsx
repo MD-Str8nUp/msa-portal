@@ -9,9 +9,24 @@ import { Input } from "@/components/ui/Input";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { FileText, Download, Eye, Trash2, Upload } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/Modal";
+import { Label } from "@/components/ui/Label";
 
 export default function ExecutiveDocumentsPage() {
   const [documentType, setDocumentType] = useState("all");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    title: "",
+    description: "",
+    type: "",
+    file: null as File | null
+  });
 
   // Mock documents data
   const documents = [
@@ -89,7 +104,7 @@ export default function ExecutiveDocumentsPage() {
             <h2 className="text-2xl font-semibold text-gray-800">Organization Documents</h2>
             <p className="text-gray-500">Manage and distribute important documents</p>
           </div>
-          <Button className="flex items-center space-x-2">
+          <Button className="flex items-center space-x-2" onClick={() => setIsUploadModalOpen(true)}>
             <Upload className="w-4 h-4" />
             <span>Upload Document</span>
           </Button>
@@ -160,6 +175,89 @@ export default function ExecutiveDocumentsPage() {
           ))}
         </div>
       </div>
+
+      {/* Upload Document Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="doc-title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="doc-title"
+                value={uploadForm.title}
+                onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})}
+                className="col-span-3"
+                placeholder="Document title"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="doc-description" className="text-right">
+                Description
+              </Label>
+              <textarea
+                id="doc-description"
+                value={uploadForm.description}
+                onChange={(e) => setUploadForm({...uploadForm, description: e.target.value})}
+                className="col-span-3 flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="Brief description of the document"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="doc-type" className="text-right">
+                Type
+              </Label>
+              <select
+                id="doc-type"
+                value={uploadForm.type}
+                onChange={(e) => setUploadForm({...uploadForm, type: e.target.value})}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Select document type</option>
+                <option value="policy">Policy Document</option>
+                <option value="handbook">Handbook</option>
+                <option value="guide">Guide</option>
+                <option value="template">Template</option>
+                <option value="legal">Legal Document</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="doc-file" className="text-right">
+                File
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="doc-file"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={(e) => setUploadForm({...uploadForm, file: e.target.files?.[0] || null})}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Accepted: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUploadModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              // TODO: Implement document upload functionality
+              console.log('Uploading document:', uploadForm);
+              setIsUploadModalOpen(false);
+              setUploadForm({ title: '', description: '', type: '', file: null });
+            }}>
+              Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

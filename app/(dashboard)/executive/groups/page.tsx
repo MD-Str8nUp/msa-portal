@@ -1,307 +1,580 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { executiveNavigation } from "@/components/navigation/ExecutiveNavigation";
-import { mockGroupService } from "@/lib/mock/data";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ALL_GROUPS } from "@/lib/constants/groups";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/Modal";
+import { Label } from "@/components/ui/Label";
 
 export default function ExecutiveGroupsPage() {
-  // Get all groups
-  const [groups, setGroups] = useState(mockGroupService.getGroups());
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newGroup, setNewGroup] = useState({
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<any>(null);
+  
+  const [newGroupForm, setNewGroupForm] = useState({
     name: '',
-    location: '',
+    description: '',
     meetingDay: 'Thursday',
     meetingTime: '6:00 PM',
-    maxMembers: '20',
-    description: ''
+    maxMembers: 20,
+    ageMin: 5,
+    ageMax: 7,
+    location: 'MSA Community Center'
   });
 
-  // Handle creating new group
-  const handleCreateGroup = () => {
-    if (!newGroup.name || !newGroup.location) {
-      alert('Please fill in all required fields');
+  const [editGroupForm, setEditGroupForm] = useState({
+    id: '',
+    name: '',
+    description: '',
+    meetingDay: 'Thursday',
+    meetingTime: '6:00 PM',
+    maxMembers: 20,
+    ageMin: 5,
+    ageMax: 7,
+    location: 'MSA Community Center'
+  });
+
+  // Fetch groups from API
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/groups?withStats=true', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch groups: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setGroups(data.data || []);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      setError('Failed to load groups. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupForm.name || !newGroupForm.description) {
+      setError('Please fill in all required fields');
       return;
     }
 
-    const group = {
-      id: `group-${Date.now()}`,
-      name: newGroup.name,
-      location: newGroup.location,
-      meetingDay: newGroup.meetingDay,
-      meetingTime: newGroup.meetingTime,
-      memberCount: 0,
-      leaderName: 'Unassigned',
-      leaderId: null,
-      maxMembers: parseInt(newGroup.maxMembers),
-      description: newGroup.description,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: newGroupForm.name,
+          description: newGroupForm.description,
+          meetingDay: newGroupForm.meetingDay,
+          meetingTime: newGroupForm.meetingTime,
+          maxMembers: newGroupForm.maxMembers,
+          ageMin: newGroupForm.ageMin,
+          ageMax: newGroupForm.ageMax,
+          location: newGroupForm.location
+        })
+      });
 
-    setGroups(prev => [...prev, group]);
-    setShowCreateModal(false);
-    setNewGroup({
-      name: '',
-      location: '',
-      meetingDay: 'Thursday',
-      meetingTime: '6:00 PM',
-      maxMembers: '20',
-      description: ''
-    });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create group');
+      }
+
+      const createdGroup = await response.json();
+      setGroups(prev => [...prev, createdGroup.data]);
+      setSuccessMessage('Group created successfully!');
+      setShowCreateModal(false);
+      
+      // Reset form
+      setNewGroupForm({
+        name: '',
+        description: '',
+        meetingDay: 'Thursday',
+        meetingTime: '6:00 PM',
+        maxMembers: 20,
+        ageMin: 5,
+        ageMax: 7,
+        location: 'MSA Community Center'
+      });
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+      
+    } catch (error: any) {
+      console.error('Error creating group:', error);
+      setError(error.message || 'Failed to create group');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  
+
+  const handleEditGroup = async () => {
+    if (!editGroupForm.name || !editGroupForm.description) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      const response = await fetch('/api/groups', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: editGroupForm.id,
+          name: editGroupForm.name,
+          description: editGroupForm.description,
+          meetingDay: editGroupForm.meetingDay,
+          meetingTime: editGroupForm.meetingTime,
+          maxMembers: editGroupForm.maxMembers,
+          ageMin: editGroupForm.ageMin,
+          ageMax: editGroupForm.ageMax,
+          location: editGroupForm.location
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update group');
+      }
+
+      const updatedGroup = await response.json();
+      setGroups(prev => prev.map(group => 
+        group.id === editGroupForm.id ? updatedGroup.data : group
+      ));
+      
+      setSuccessMessage('Group updated successfully!');
+      setIsEditModalOpen(false);
+      setSelectedGroup(null);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+      
+    } catch (error: any) {
+      console.error('Error updating group:', error);
+      setError(error.message || 'Failed to update group');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      
+      const response = await fetch(`/api/groups?id=${groupId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete group');
+      }
+
+      setGroups(prev => prev.filter(group => group.id !== groupId));
+      setSuccessMessage('Group deleted successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+      
+    } catch (error: any) {
+      console.error('Error deleting group:', error);
+      setError(error.message || 'Failed to delete group');
+    }
+  };
+
+  const openEditModal = (group: any) => {
+    setSelectedGroup(group);
+    setEditGroupForm({
+      id: group.id,
+      name: group.name,
+      description: group.description || '',
+      meetingDay: group.meetingDay || 'Thursday',
+      meetingTime: group.meetingTime || '6:00 PM',
+      maxMembers: group.maxMembers || 20,
+      ageMin: group.ageMin || 5,
+      ageMax: group.ageMax || 7,
+      location: group.location || 'MSA Community Center'
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Clear messages when they exist
+  useEffect(() => {
+    if (error || successMessage) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, successMessage]);
+
   return (
-    <DashboardLayout 
-      navigation={executiveNavigation} 
-      pageTitle="Groups" 
+    <DashboardLayout
+      navigation={executiveNavigation}
+      pageTitle="Groups"
       userRole="executive"
     >
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex justify-between items-center">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800">Scout Groups</h2>
-            <p className="text-gray-500">Manage all scout groups in the organization</p>
+            <h1 className="text-2xl font-bold">Group Management</h1>
+            <p className="text-gray-500">Manage scout groups across the academy</p>
           </div>
-          <Button 
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 bg-msa-sage hover:bg-msa-sage/90 text-white"
-          >
-            <span>Create Group</span>
+          <Button onClick={() => setShowCreateModal(true)}>
+            Create New Group
           </Button>
         </div>
-        
-        {/* Groups List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {groups.map(group => (
-            <Card key={group.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle>{group.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex flex-col space-y-1">
-                  <span className="text-sm font-medium">Leader: {group.leaderName}</span>
-                  <span className="text-sm font-medium">
-                    Members: {group.memberCount} scouts
-                  </span>
-                  <span className="text-sm font-medium">
-                    Location: {group.location}
-                  </span>
-                  <span className="text-sm font-medium">
-                    Meetings: {group.meetingDay}s at {group.meetingTime}
-                  </span>
-                </div>
-              </CardContent>
-              <div className="p-4 pt-0 flex space-x-2">
-                <Button className="flex-1">Manage</Button>
-                <Button variant="outline" className="flex-1">View Scouts</Button>
-              </div>
-            </Card>
-          ))}        </div>
-        
-        {/* Group Statistics */}
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Group Statistics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-3xl font-bold">{groups.length}</div>
-                <div className="text-sm text-gray-500">Total Groups</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-3xl font-bold">
-                  {groups.reduce((total, group) => total + group.memberCount, 0)}
-                </div>
-                <div className="text-sm text-gray-500">Total Scouts</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-3xl font-bold">
-                  {groups.length > 0 ? Math.round(groups.reduce((total, group) => total + group.memberCount, 0) / groups.length) : 0}
-                </div>
-                <div className="text-sm text-gray-500">Avg. Group Size</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-3xl font-bold">
-                  {groups.filter(g => g.memberCount > 10).length}
-                </div>
-                <div className="text-sm text-gray-500">Large Groups ({'>'}10)</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        
-        {/* Group Management Tools */}
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Group Management</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-6 hover:bg-gray-50 cursor-pointer">
-              <div className="flex flex-col items-center text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-blue-500">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-                <h3 className="font-semibold">Create New Group</h3>
-                <p className="text-sm text-gray-500 mt-2">Setup a new scout group with leader and location</p>
-              </div>
-            </Card>
-            <Card className="p-6 hover:bg-gray-50 cursor-pointer">
-              <div className="flex flex-col items-center text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-green-500">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                <h3 className="font-semibold">Assign Leaders</h3>
-                <p className="text-sm text-gray-500 mt-2">Assign or change group leadership</p>
-              </div>
-            </Card>
-            <Card className="p-6 hover:bg-gray-50 cursor-pointer">
-              <div className="flex flex-col items-center text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-purple-500">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="3" y1="9" x2="21" y2="9"></line>
-                  <line x1="9" y1="21" x2="9" y2="9"></line>
-                </svg>
-                <h3 className="font-semibold">Schedule Management</h3>
-                <p className="text-sm text-gray-500 mt-2">Update meeting schedules and locations</p>
-              </div>
-            </Card>
-          </div>
-        </div>
 
-        {/* Create Group Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Create New Scout Group</h2>
-                <button 
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <span className="sr-only">Close</span>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Group Name *
-                  </label>
-                  <Input
-                    value={newGroup.name}
-                    onChange={(e) => setNewGroup(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter group name (e.g., Wolf Pack, Eagle Scouts)"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Meeting Location *
-                  </label>
-                  <Input
-                    value={newGroup.location}
-                    onChange={(e) => setNewGroup(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="Enter meeting location"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Meeting Day
-                    </label>
-                    <select
-                      value={newGroup.meetingDay}
-                      onChange={(e) => setNewGroup(prev => ({ ...prev, meetingDay: e.target.value }))}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
-                    >
-                      <option value="Monday">Monday</option>
-                      <option value="Tuesday">Tuesday</option>
-                      <option value="Wednesday">Wednesday</option>
-                      <option value="Thursday">Thursday</option>
-                      <option value="Friday">Friday</option>
-                      <option value="Saturday">Saturday</option>
-                      <option value="Sunday">Sunday</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Meeting Time
-                    </label>
-                    <Input
-                      value={newGroup.meetingTime}
-                      onChange={(e) => setNewGroup(prev => ({ ...prev, meetingTime: e.target.value }))}
-                      placeholder="e.g., 6:00 PM"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Maximum Members
-                  </label>
-                  <Input
-                    type="number"
-                    value={newGroup.maxMembers}
-                    onChange={(e) => setNewGroup(prev => ({ ...prev, maxMembers: e.target.value }))}
-                    placeholder="20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Group Description
-                  </label>
-                  <textarea
-                    value={newGroup.description}
-                    onChange={(e) => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-msa-sage focus:border-transparent"
-                    rows={3}
-                    placeholder="Describe the group's focus and activities"
-                  />
-                </div>
-
-                <div className="bg-msa-sage/10 border border-msa-sage/20 rounded-lg p-3">
-                  <p className="text-sm text-msa-charcoal font-medium">🕌 Islamic Foundation:</p>
-                  <p className="text-xs text-msa-sage">"And hold firmly to the rope of Allah all together and do not become divided" - Quran 3:103</p>
-                  <p className="text-xs text-msa-sage mt-1">Building Islamic unity through scouting</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 mt-6">
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateGroup}
-                  className="bg-msa-sage hover:bg-msa-sage/90 text-white"
-                >
-                  Create Group
-                </Button>
-              </div>
-            </div>
+        {/* Status Messages */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-800">{error}</p>
           </div>
         )}
+
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-green-800">{successMessage}</p>
+          </div>
+        )}
+
+        {/* Groups Grid */}
+        {loading ? (
+          <div className="text-center py-8">
+            <p>Loading groups...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {groups.map((group) => (
+              <Card key={group.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-start">
+                    <span>{group.name}</span>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditModal(group)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteGroup(group.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p><strong>Description:</strong> {group.description || 'No description'}</p>
+                    <p><strong>Total Scouts:</strong> {group.stats?.totalScouts || 0}</p>
+                    <p><strong>Active Scouts:</strong> {group.stats?.activeScouts || 0}</p>
+                    <p><strong>Leaders:</strong> {group.stats?.totalLeaders || 0}</p>
+                    <p><strong>Upcoming Events:</strong> {group.stats?.upcomingEvents || 0}</p>
+                    {group.groupLeaders && group.groupLeaders.length > 0 && (
+                      <p><strong>Lead by:</strong> {group.groupLeaders.map((gl: any) => gl.user.name).join(', ')}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Create Group Modal */}
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Create New Group</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="group-name" className="text-right">
+                  Name *
+                </Label>
+                <Input
+                  id="group-name"
+                  value={newGroupForm.name}
+                  onChange={(e) => setNewGroupForm({...newGroupForm, name: e.target.value})}
+                  placeholder="e.g., Cubs A"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="group-description" className="text-right">
+                  Description *
+                </Label>
+                <Input
+                  id="group-description"
+                  value={newGroupForm.description}
+                  onChange={(e) => setNewGroupForm({...newGroupForm, description: e.target.value})}
+                  placeholder="Group description"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="age-range" className="text-right">
+                  Age Range
+                </Label>
+                <div className="col-span-3 flex space-x-2">
+                  <Input
+                    type="number"
+                    value={newGroupForm.ageMin}
+                    onChange={(e) => setNewGroupForm({...newGroupForm, ageMin: parseInt(e.target.value)})}
+                    placeholder="Min"
+                    min="5"
+                    max="18"
+                  />
+                  <span className="self-center">to</span>
+                  <Input
+                    type="number"
+                    value={newGroupForm.ageMax}
+                    onChange={(e) => setNewGroupForm({...newGroupForm, ageMax: parseInt(e.target.value)})}
+                    placeholder="Max"
+                    min="5"
+                    max="18"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="max-members" className="text-right">
+                  Max Members
+                </Label>
+                <Input
+                  id="max-members"
+                  type="number"
+                  value={newGroupForm.maxMembers}
+                  onChange={(e) => setNewGroupForm({...newGroupForm, maxMembers: parseInt(e.target.value)})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="location" className="text-right">
+                  Location
+                </Label>
+                <Input
+                  id="location"
+                  value={newGroupForm.location}
+                  onChange={(e) => setNewGroupForm({...newGroupForm, location: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="meeting-day" className="text-right">
+                  Meeting Day
+                </Label>
+                <select
+                  id="meeting-day"
+                  value={newGroupForm.meetingDay}
+                  onChange={(e) => setNewGroupForm({...newGroupForm, meetingDay: e.target.value})}
+                  className="col-span-3 px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                  <option value="Sunday">Sunday</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="meeting-time" className="text-right">
+                  Meeting Time
+                </Label>
+                <Input
+                  id="meeting-time"
+                  value={newGroupForm.meetingTime}
+                  onChange={(e) => setNewGroupForm({...newGroupForm, meetingTime: e.target.value})}
+                  placeholder="e.g., 6:00 PM"
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateGroup}
+                disabled={isSubmitting || !newGroupForm.name || !newGroupForm.description}
+              >
+                {isSubmitting ? 'Creating...' : 'Create Group'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Group Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Group</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-name" className="text-right">
+                  Name *
+                </Label>
+                <Input
+                  id="edit-name"
+                  value={editGroupForm.name}
+                  onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-description" className="text-right">
+                  Description *
+                </Label>
+                <Input
+                  id="edit-description"
+                  value={editGroupForm.description}
+                  onChange={(e) => setEditGroupForm({...editGroupForm, description: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-age-range" className="text-right">
+                  Age Range
+                </Label>
+                <div className="col-span-3 flex space-x-2">
+                  <Input
+                    type="number"
+                    value={editGroupForm.ageMin}
+                    onChange={(e) => setEditGroupForm({...editGroupForm, ageMin: parseInt(e.target.value)})}
+                    min="5"
+                    max="18"
+                  />
+                  <span className="self-center">to</span>
+                  <Input
+                    type="number"
+                    value={editGroupForm.ageMax}
+                    onChange={(e) => setEditGroupForm({...editGroupForm, ageMax: parseInt(e.target.value)})}
+                    min="5"
+                    max="18"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-max-members" className="text-right">
+                  Max Members
+                </Label>
+                <Input
+                  id="edit-max-members"
+                  type="number"
+                  value={editGroupForm.maxMembers}
+                  onChange={(e) => setEditGroupForm({...editGroupForm, maxMembers: parseInt(e.target.value)})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-location" className="text-right">
+                  Location
+                </Label>
+                <Input
+                  id="edit-location"
+                  value={editGroupForm.location}
+                  onChange={(e) => setEditGroupForm({...editGroupForm, location: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-meeting-day" className="text-right">
+                  Meeting Day
+                </Label>
+                <select
+                  id="edit-meeting-day"
+                  value={editGroupForm.meetingDay}
+                  onChange={(e) => setEditGroupForm({...editGroupForm, meetingDay: e.target.value})}
+                  className="col-span-3 px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                  <option value="Sunday">Sunday</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-meeting-time" className="text-right">
+                  Meeting Time
+                </Label>
+                <Input
+                  id="edit-meeting-time"
+                  value={editGroupForm.meetingTime}
+                  onChange={(e) => setEditGroupForm({...editGroupForm, meetingTime: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleEditGroup}
+                disabled={isSubmitting || !editGroupForm.name || !editGroupForm.description}
+              >
+                {isSubmitting ? 'Updating...' : 'Update Group'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

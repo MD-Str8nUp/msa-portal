@@ -1,11 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
-
-// Helper function to hash passwords
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
+import bcrypt from 'bcryptjs';
 
 // Generate a simple JWT token
 function generateToken(userId: string): string {
@@ -67,9 +63,9 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: 'Invalid email or password' }, { status: 401 });
     }
     
-    // Check if password matches
-    const hashedPassword = hashPassword(password);
-    if (user.password !== hashedPassword) {
+    // Check if password matches using bcrypt
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
       return Response.json({ error: 'Invalid email or password' }, { status: 401 });
     }
     

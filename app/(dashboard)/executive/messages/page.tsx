@@ -9,11 +9,25 @@ import { Input } from "@/components/ui/Input";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { MessageSquare, Send, Search, User, Users, Clock } from "lucide-react";
 import { useSocketContext } from "@/lib/contexts/SocketContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/Modal";
+import { Label } from "@/components/ui/Label";
 
 export default function ExecutiveMessagesPage() {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [newMessageText, setNewMessageText] = useState("");
+  const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+  const [newMessageForm, setNewMessageForm] = useState({
+    recipient: "",
+    subject: "",
+    message: ""
+  });
   
   // Get socket context data
   const { messages: socketMessages, sendMessage, isConnected, onlineUsers } = useSocketContext();
@@ -154,7 +168,7 @@ export default function ExecutiveMessagesPage() {
               />
             </div>
             <div className="mt-4">
-              <Button className="w-full">
+              <Button className="w-full" onClick={() => setIsNewMessageModalOpen(true)}>
                 <MessageSquare className="h-4 w-4 mr-2" /> New Message
               </Button>
             </div>
@@ -302,6 +316,78 @@ export default function ExecutiveMessagesPage() {
           </div>
         </div>
       </div>
+
+      {/* New Message Modal */}
+      <Dialog open={isNewMessageModalOpen} onOpenChange={setIsNewMessageModalOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>New Message</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="recipient" className="text-right">
+                To
+              </Label>
+              <select
+                id="recipient"
+                value={newMessageForm.recipient}
+                onChange={(e) => setNewMessageForm({...newMessageForm, recipient: e.target.value})}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Select recipient</option>
+                <option value="all-leaders">All Leaders</option>
+                <option value="all-parents">All Parents</option>
+                <option value="eagle-scouts">Eagle Scouts Group</option>
+                <option value="wolf-pack">Wolf Pack Group</option>
+                <option value="trailblazers">Trailblazers Group</option>
+                <option value="specific">Specific User...</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="subject" className="text-right">
+                Subject
+              </Label>
+              <Input
+                id="subject"
+                value={newMessageForm.subject}
+                onChange={(e) => setNewMessageForm({...newMessageForm, subject: e.target.value})}
+                className="col-span-3"
+                placeholder="Message subject"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="message" className="text-right mt-2">
+                Message
+              </Label>
+              <textarea
+                id="message"
+                value={newMessageForm.message}
+                onChange={(e) => setNewMessageForm({...newMessageForm, message: e.target.value})}
+                className="col-span-3 flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="Type your message here..."
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <div className="col-span-4 text-sm text-gray-500 text-right">
+                Tip: Use respectful language appropriate for an Islamic community
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewMessageModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              // TODO: Implement send message functionality
+              console.log('Sending message:', newMessageForm);
+              setIsNewMessageModalOpen(false);
+              setNewMessageForm({ recipient: '', subject: '', message: '' });
+            }}>
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

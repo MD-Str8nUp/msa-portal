@@ -7,11 +7,19 @@ export const auth = {
   // Get the current user
   getCurrentUser: async () => {
     try {
-      // First try to get from API
-      const response = await fetch('/api/auth/user');
-      if (response.ok) {
-        const user = await response.json();
-        return user;
+      // Get token from localStorage
+      const token = localStorage.getItem('auth-token');
+      if (token) {
+        // Try to get from API with token
+        const response = await fetch('/api/auth/user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const user = await response.json();
+          return user;
+        }
       }
     } catch (error) {
       console.error('Error fetching current user, falling back to mock:', error);
