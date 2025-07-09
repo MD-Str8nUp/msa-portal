@@ -4,6 +4,9 @@
       "maxDuration": 30
     }
   },
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run vercel-build"
+  "installCommand": "npm install --force --legacy-peer-deps",
+  "buildCommand": "npm run vercel-build",
+  "env": {
+    "NODE_VERSION": "18.17.0"
+  }
 }

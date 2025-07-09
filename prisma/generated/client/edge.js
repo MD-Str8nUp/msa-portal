@@ -267,7 +267,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\Moey\\Desktop\\msa-portal11\\prisma\\generated\\client",
+      "value": "/mnt/c/Users/Moey/Desktop/msa-portal11/prisma/generated/client",
       "fromEnvVar": null
     },
     "config": {
@@ -276,12 +276,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "debian-openssl-3.0.x",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\Moey\\Desktop\\msa-portal11\\prisma\\schema.prisma",
+    "sourceFilePath": "/mnt/c/Users/Moey/Desktop/msa-portal11/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
