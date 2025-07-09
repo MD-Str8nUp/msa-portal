@@ -16,12 +16,43 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    // Simple demo login
-    if (email === "demo@msa.com" && password === "demo123") {
-      router.push("/executive/dashboard");
-    } else {
-      setError("Demo credentials: demo@msa.com / demo123");
+    try {
+      // Call the authentication API instead of hardcoded check
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Store token and redirect based on user role
+        localStorage.setItem('auth-token', result.token);
+        
+        switch (result.user.role) {
+          case 'executive':
+            router.push("/executive/dashboard");
+            break;
+          case 'leader':
+            router.push("/leader/dashboard");
+            break;
+          case 'parent':
+            router.push("/parent/dashboard");
+            break;
+          default:
+            router.push("/dashboard");
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Invalid credentials");
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError("An error occurred during login. Please try again.");
     }
+    
     setIsLoading(false);
   };
 
@@ -104,6 +135,9 @@ export default function LoginPage() {
           <div className="text-center mb-3">
             <p className="text-sm text-green-800 font-medium">
               🚀 Quick Demo Access for Friday Presentation
+            </p>
+            <p className="text-xs text-green-600 mt-1">
+              Use demo@msa.com / demo123 for login
             </p>
           </div>
           <div className="flex justify-center space-x-2 mt-3">

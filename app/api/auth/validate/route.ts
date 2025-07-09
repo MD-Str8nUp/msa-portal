@@ -6,8 +6,13 @@ function verifyToken(token: string): { valid: boolean; userId?: string } {
   try {
     const [header, payload, signature] = token.split('.');
     
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      return { valid: false };
+    }
+    
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.NEXTAUTH_SECRET || 'fallback-secret')
+      .createHmac('sha256', secret)
       .update(`${header}.${payload}`)
       .digest('base64');
     

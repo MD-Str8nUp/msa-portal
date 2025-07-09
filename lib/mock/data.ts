@@ -321,16 +321,28 @@ export const mockMessages = messages;
 export const mockAuthService = {
   login: (email: string, password: string) => {
     const user = users.find(u => u.email === email);
-    if (user && password === "password") {
-      try {
-        // Make sure we're in a browser environment
-        if (typeof window !== "undefined") {
-          localStorage.setItem("user", JSON.stringify(user));
+    if (user) {
+      // In a real application, this should use bcrypt.compare() with hashed passwords
+      // For development/demo purposes, check against user-specific passwords
+      const validCredentials = [
+        { email: "demo@msa.com", password: "demo123" },
+        { email: "admin@msa.com", password: "admin456" },
+        { email: "parent@msa.com", password: "parent789" },
+        { email: "leader@msa.com", password: "leader321" }
+      ];
+      
+      const credentials = validCredentials.find(c => c.email === email);
+      if (credentials && password === credentials.password) {
+        try {
+          // Make sure we're in a browser environment
+          if (typeof window !== "undefined") {
+            localStorage.setItem("user", JSON.stringify(user));
+          }
+          return user;
+        } catch (error) {
+          console.error("Error storing user in localStorage:", error);
+          return user; // Still return the user even if localStorage fails
         }
-        return user;
-      } catch (error) {
-        console.error("Error storing user in localStorage:", error);
-        return user; // Still return the user even if localStorage fails
       }
     }
     return null;

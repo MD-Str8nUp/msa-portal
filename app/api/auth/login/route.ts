@@ -12,8 +12,13 @@ function generateToken(userId: string): string {
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 // 24 hours
   })).toString('base64');
   
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error('NEXTAUTH_SECRET environment variable is required for JWT signing');
+  }
+  
   const signature = crypto
-    .createHmac('sha256', process.env.NEXTAUTH_SECRET || 'fallback-secret')
+    .createHmac('sha256', secret)
     .update(`${header}.${payload}`)
     .digest('base64');
   
@@ -25,8 +30,13 @@ function verifyToken(token: string): { valid: boolean; userId?: string } {
   try {
     const [header, payload, signature] = token.split('.');
     
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      return { valid: false };
+    }
+    
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.NEXTAUTH_SECRET || 'fallback-secret')
+      .createHmac('sha256', secret)
       .update(`${header}.${payload}`)
       .digest('base64');
     
