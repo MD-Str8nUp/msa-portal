@@ -67,8 +67,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="theme-color" content="#5F8A8B" />
-        <meta name="msapplication-TileColor" content="#5F8A8B" />
+        <meta name="theme-color" content="#2F5233" />
+        <meta name="msapplication-TileColor" content="#2F5233" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="MSA Portal" />

@@ -45,7 +45,7 @@ export default function BottomNavigation({ userRole }: BottomNavigationProps) {
   const items = navigationItems[userRole];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-safe z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-msa-soft-white border-t border-msa-light-sage px-2 pb-safe z-50 shadow-lg backdrop-blur-sm">
       <div className="flex items-center justify-around">
         {items.map((item) => {
           const isActive = pathname === item.href || 
@@ -56,36 +56,44 @@ export default function BottomNavigation({ userRole }: BottomNavigationProps) {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 min-w-[60px] transition-colors duration-150",
-                isActive ? "text-blue-600" : "text-gray-500"
+                "flex flex-col items-center justify-center py-3 px-2 min-w-[64px] touch-target transition-all duration-200",
+                isActive ? "text-msa-brand" : "text-msa-charcoal/60"
               )}
             >
               <div className="relative">
-                <item.icon 
-                  className={cn(
-                    "h-6 w-6 transition-transform duration-200",
-                    isActive && "scale-110"
-                  )} 
-                />
-                {/* Notification dot example for messages */}
+                <div className={cn(
+                  "p-1 rounded-lg transition-all duration-200",
+                  isActive ? "bg-msa-brand/10" : "hover:bg-msa-light-sage/30"
+                )}>
+                  <item.icon 
+                    className={cn(
+                      "h-5 w-5 transition-all duration-200",
+                      isActive && "scale-110"
+                    )} 
+                  />
+                </div>
+                {/* Islamic-styled notification dot for messages */}
                 {item.name === "Messages" && (
-                  <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-msa-golden rounded-full border-2 border-msa-soft-white animate-pulse" />
                 )}
               </div>
               <span className={cn(
-                "text-xs mt-1 font-medium",
-                isActive ? "text-blue-600" : "text-gray-500"
+                "text-xs mt-1 font-medium text-center leading-tight",
+                isActive ? "text-msa-brand" : "text-msa-charcoal/60"
               )}>
                 {item.name}
               </span>
-              {/* Active indicator */}
+              {/* MSA-themed active indicator */}
               {isActive && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-blue-600 rounded-t-full" />
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-msa-brand to-msa-golden rounded-t-full" />
               )}
             </Link>
           );
         })}
       </div>
+      
+      {/* Islamic decoration */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-0.5 bg-gradient-to-r from-msa-brand to-msa-golden opacity-30"></div>
     </nav>
   );
 }

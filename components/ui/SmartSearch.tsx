@@ -86,7 +86,7 @@ export default function SmartSearch({ className, placeholder = "Search scouts, e
   };
 
   useEffect(() => {
-    performSearch(query, activeFilter);
+    performSearch(query, activeFilter || undefined);
   }, [query, activeFilter]);
 
   // Load recent searches from localStorage

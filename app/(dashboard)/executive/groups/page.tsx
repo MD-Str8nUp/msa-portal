@@ -87,7 +87,7 @@ export default function ExecutiveGroupsPage() {
                 <div className="space-y-2">
                   <p><strong>Location:</strong> {group.location}</p>
                   <p><strong>Meeting:</strong> {group.meetingDay}s at {group.meetingTime}</p>
-                  <p><strong>Members:</strong> {group.memberCount}/{group.maxMembers}</p>
+                  <p><strong>Members:</strong> {group.memberCount || 0}</p>
                   <p><strong>Leader:</strong> {group.leaderName}</p>
                   {group.description && (
                     <p><strong>Description:</strong> {group.description}</p>

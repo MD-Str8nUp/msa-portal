@@ -369,7 +369,7 @@ class MSAExcelTemplateGenerator {
       // Real family data with proper group assignments
       ...familiesData.map((family, index) => [
         family.submission_date,
-        family.submission_id || `MSA_${index + 1}`,
+        (family as any).submission_id || `MSA_${index + 1}`,
         family.parent_first_name,
         family.parent_last_name,
         family.parent_email,
@@ -390,7 +390,7 @@ class MSAExcelTemplateGenerator {
         family.child_allergies || 'None',
         family.child_age ? this.getDetailedGroupAssignment(family.child_age) : '',
         family.status || 'Pending Review',
-        family.priority_score || 75,
+        (family as any).priority_score || 75,
         family.notes || ''
       ])
     ];

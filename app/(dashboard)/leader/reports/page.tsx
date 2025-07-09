@@ -44,11 +44,11 @@ export default function LeaderReportsPage() {
 
     const report = {
       id: `report-${Date.now()}`,
-      type: newReport.type,
+      type: newReport.type as "attendance" | "achievements" | "events" | "progress" | "financial" | "activity" | "incident",
       title: newReport.title,
       description: newReport.description,
       date: new Date().toISOString(),
-      status: 'pending',
+      status: 'submitted' as const,
       scoutName: newReport.scoutName,
       severity: newReport.severity,
       category: newReport.category,

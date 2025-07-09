@@ -7,11 +7,12 @@
 :root {
   /* Mi'raj Scouts Academy Brand Colors */
   
-  /* PRIMARY BRAND COLORS */
-  --msa-sage-green: 188 22% 45%;        /* #5F8A8B - Main brand color */
-  --msa-forest-green: 106 20% 34%;      /* #4A6741 - Secondary brand */
-  --msa-golden-yellow: 45 66% 52%;      /* #D4AF37 - Accent/CTA buttons */
-  --msa-deep-teal: 178 36% 26%;         /* #2C5F5D - Dark accents */
+  /* PRIMARY BRAND COLORS - UPDATED FOR MSA REQUIREMENTS */
+  --msa-brand-green: 136 39% 25%;       /* #2F5233 - Primary MSA green */
+  --msa-sage-green: 136 39% 35%;        /* Lighter variation of MSA green */
+  --msa-forest-green: 136 39% 20%;      /* Darker variation of MSA green */
+  --msa-golden-yellow: 45 66% 52%;      /* #D4AF37 - MSA gold accent */
+  --msa-deep-teal: 178 36% 26%;         /* #2C5F5D - Supporting color */
   --msa-warm-brown: 38 24% 44%;         /* #8B7355 - Earth tones */
   
   /* SECONDARY BRAND COLORS */
@@ -36,8 +37,8 @@
   --popover: 0 0% 99%;                   /* MSA Soft White */
   --popover-foreground: 210 8% 19%;      /* MSA Charcoal */
   
-  /* Primary - MSA Sage Green */
-  --primary: 188 22% 45%;                /* MSA Sage Green */
+  /* Primary - MSA Brand Green */
+  --primary: 136 39% 25%;                /* MSA Brand Green (#2F5233) */
   --primary-foreground: 0 0% 99%;        /* MSA Soft White */
   
   /* Secondary - MSA Light Sage */
@@ -56,8 +57,8 @@
   --destructive: 0 60% 50%;
   --destructive-foreground: 0 0% 98%;
   
-  /* Success - MSA Forest Green */
-  --success: 106 20% 34%;                /* MSA Forest Green */
+  /* Success - MSA Brand Green */
+  --success: 136 39% 25%;                /* MSA Brand Green */
   --success-foreground: 0 0% 99%;        /* MSA Soft White */
   
   /* Warning - MSA Golden Yellow (darker) */
@@ -67,7 +68,7 @@
   /* Borders and inputs */
   --border: 120 25% 85%;                 /* Light MSA Light Sage */
   --input: 120 25% 85%;                  /* Light MSA Light Sage */
-  --ring: 188 22% 45%;                   /* MSA Sage Green */
+  --ring: 136 39% 25%;                   /* MSA Brand Green */
   
   --radius: 0.75rem;
   
@@ -148,12 +149,14 @@ nav, button, .btn {
 }
 
 /* Brand-specific utility classes */
+.text-msa-brand { color: hsl(var(--msa-brand-green)); }
 .text-msa-sage { color: hsl(var(--msa-sage-green)); }
 .text-msa-forest { color: hsl(var(--msa-forest-green)); }
 .text-msa-golden { color: hsl(var(--msa-golden-yellow)); }
 .text-msa-teal { color: hsl(var(--msa-deep-teal)); }
 .text-msa-brown { color: hsl(var(--msa-warm-brown)); }
 
+.bg-msa-brand { background-color: hsl(var(--msa-brand-green)); }
 .bg-msa-sage { background-color: hsl(var(--msa-sage-green)); }
 .bg-msa-forest { background-color: hsl(var(--msa-forest-green)); }
 .bg-msa-golden { background-color: hsl(var(--msa-golden-yellow)); }

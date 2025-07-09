@@ -58,9 +58,10 @@ module.exports = {
         },
         // MSA Brand Colors
         msa: {
+          brand: "hsl(var(--msa-brand-green))",      // Primary MSA green #2F5233
           sage: "hsl(var(--msa-sage-green))",
           forest: "hsl(var(--msa-forest-green))",
-          golden: "hsl(var(--msa-golden-yellow))",
+          golden: "hsl(var(--msa-golden-yellow))",   // MSA gold #D4AF37
           teal: "hsl(var(--msa-deep-teal))",
           brown: "hsl(var(--msa-warm-brown))",
           'light-sage': "hsl(var(--msa-light-sage))",
