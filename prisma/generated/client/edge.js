@@ -35,12 +35,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.10.1
- * Query Engine version: 9b628578b3b7cae625e8c927178f15a170e74a9c
+ * Prisma Client JS version: 6.11.1
+ * Query Engine version: f40f79ec31188888a2e33acda0ecc8fd10a853a9
  */
 Prisma.prismaVersion = {
-  client: "6.10.1",
-  engine: "9b628578b3b7cae625e8c927178f15a170e74a9c"
+  client: "6.11.1",
+  engine: "f40f79ec31188888a2e33acda0ecc8fd10a853a9"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -267,7 +267,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/mnt/c/Users/Moey/Desktop/msa-portal11/prisma/generated/client",
+      "value": "C:\\Users\\Moey\\Desktop\\msa-portal11\\prisma\\generated\\client",
       "fromEnvVar": null
     },
     "config": {
@@ -276,12 +276,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "debian-openssl-3.0.x",
+        "value": "windows",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/mnt/c/Users/Moey/Desktop/msa-portal11/prisma/schema.prisma",
+    "sourceFilePath": "C:\\Users\\Moey\\Desktop\\msa-portal11\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -289,8 +289,8 @@ const config = {
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../..",
-  "clientVersion": "6.10.1",
-  "engineVersion": "9b628578b3b7cae625e8c927178f15a170e74a9c",
+  "clientVersion": "6.11.1",
+  "engineVersion": "f40f79ec31188888a2e33acda0ecc8fd10a853a9",
   "datasourceNames": [
     "db"
   ],
