@@ -1,5 +1,5 @@
 // Mi'raj Scouts Academy - Real Data Import Script
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../prisma/generated/client');
 const fs = require('fs');
 const Papa = require('papaparse');
 
