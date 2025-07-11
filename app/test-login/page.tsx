@@ -1,158 +1,187 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { auth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function TestLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("Msa@2025");
-  const [loginResult, setLoginResult] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [email, setEmail] = useState("test@test.com");
+  const [password, setPassword] = useState("test123");
+  const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
-  const [demoUser, setDemoUser] = useState<any>(null);
 
-  const handleLogin = async () => {
+  const testLogin = async () => {
     setLoading(true);
+    setResult("Testing login...");
+    
     try {
-      const user = await auth.login(email, password);
-      setLoginResult(user);
+      console.log("Starting login test with:", { email, password });
       
-      // Also get current user to verify token works
-      const current = await auth.getCurrentUser();
-      setCurrentUser(current);
-    } catch (error) {
-      setLoginResult({ error: error instanceof Error ? error.message : 'Login failed' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getDemoUser = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/demo-login', {
-        method: 'POST',
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      const result = await response.json();
-      setDemoUser(result);
-      
-      if (result.success) {
-        // Set the token in localStorage to simulate login
-        localStorage.setItem('auth-token', result.token);
-        localStorage.setItem('user-id', result.user.id);
-        
-        // Update current user
-        const current = await auth.getCurrentUser();
-        setCurrentUser(current);
+
+      console.log("Login response:", { data, error });
+
+      if (error) {
+        setResult(`❌ Error: ${error.message}`);
+        console.error("Login error:", error);
+        return;
       }
-    } catch (error) {
-      setDemoUser({ error: error instanceof Error ? error.message : 'Demo failed' });
+
+      if (data.user) {
+        setResult(`✅ Success! User: ${data.user.email}\nID: ${data.user.id}`);
+        console.log("Login successful:", data.user);
+        
+        // Test fetching user details via API route (bypasses RLS)
+        try {
+          const response = await fetch(`/api/user?userId=${data.user.id}`);
+          if (response.ok) {
+            const userResult = await response.json();
+            if (userResult.user) {
+              setResult(prev => prev + `\n✅ User details: ${userResult.user.full_name} (${userResult.user.role})`);
+            }
+          } else {
+            setResult(prev => prev + `\n⚠️ User fetch error: ${response.status} ${response.statusText}`);
+          }
+        } catch (fetchError: any) {
+          setResult(prev => prev + `\n⚠️ User fetch error: ${fetchError.message || fetchError}`);
+        }
+      }
+    } catch (error: any) {
+      console.error("Unexpected error:", error);
+      setResult(`💥 Unexpected error: ${error.message || error}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const getTestUsers = async () => {
+  const testLogout = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/test-users');
-      const result = await response.json();
-      setDemoUser(result);
-    } catch (error) {
-      setDemoUser({ error: error instanceof Error ? error.message : 'Test users failed' });
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setResult(`❌ Logout error: ${error.message}`);
+      } else {
+        setResult("✅ Logged out successfully");
+      }
+    } catch (error: any) {
+      setResult(`💥 Logout error: ${error.message || error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkSession = async () => {
+    setLoading(true);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        setResult(`❌ Session error: ${error.message}`);
+      } else if (session) {
+        setResult(`✅ Active session: ${session.user.email}`);
+      } else {
+        setResult("ℹ️ No active session");
+      }
+    } catch (error: any) {
+      setResult(`💥 Session check error: ${error.message || error}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-center mb-8">MSA Portal Authentication Test</h1>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', padding: '2rem' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'white', borderRadius: '8px', padding: '2rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center' }}>Login Test Page</h1>
         
-        {/* Manual Login Test */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Manual Login Test</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Email:</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-2 border rounded"
-                placeholder="Enter parent email"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Password:</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 border rounded"
-                placeholder="Default: Msa@2025"
-              />
-            </div>
-            <Button onClick={handleLogin} disabled={loading} className="w-full">
-              {loading ? "Logging in..." : "Login"}
-            </Button>
-            
-            {loginResult && (
-              <div className="mt-4 p-4 bg-gray-100 rounded">
-                <h4 className="font-medium">Login Result:</h4>
-                <pre className="text-sm">{JSON.stringify(loginResult, null, 2)}</pre>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Demo Login Test */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Demo Login Test</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button onClick={getDemoUser} disabled={loading}>
-                {loading ? "Loading..." : "Get Demo Parent Login"}
-              </Button>
-              <Button onClick={getTestUsers} disabled={loading} variant="outline">
-                {loading ? "Loading..." : "Show Test Users"}
-              </Button>
-            </div>
-            
-            {demoUser && (
-              <div className="mt-4 p-4 bg-gray-100 rounded">
-                <h4 className="font-medium">Demo/Test Result:</h4>
-                <pre className="text-sm">{JSON.stringify(demoUser, null, 2)}</pre>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Current User Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Current User Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {currentUser ? (
-              <div className="p-4 bg-green-100 rounded">
-                <h4 className="font-medium text-green-800">Authenticated User:</h4>
-                <pre className="text-sm text-green-700">{JSON.stringify(currentUser, null, 2)}</pre>
-              </div>
-            ) : (
-              <div className="p-4 bg-red-100 rounded">
-                <h4 className="font-medium text-red-800">No authenticated user</h4>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Email:</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Password:</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <button
+            onClick={testLogin}
+            disabled={loading}
+            style={{ 
+              flex: 1, 
+              backgroundColor: '#007bff', 
+              color: 'white', 
+              padding: '0.75rem', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            {loading ? "Loading..." : "Test Login"}
+          </button>
+          
+          <button
+            onClick={checkSession}
+            disabled={loading}
+            style={{ 
+              flex: 1, 
+              backgroundColor: '#28a745', 
+              color: 'white', 
+              padding: '0.75rem', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            Check Session
+          </button>
+          
+          <button
+            onClick={testLogout}
+            disabled={loading}
+            style={{ 
+              flex: 1, 
+              backgroundColor: '#dc3545', 
+              color: 'white', 
+              padding: '0.75rem', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            Test Logout
+          </button>
+        </div>
+        
+        <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px', border: '1px solid #dee2e6' }}>
+          <h3 style={{ marginBottom: '0.5rem', fontWeight: '500' }}>Result:</h3>
+          <pre style={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap', margin: 0 }}>{result || "No test run yet"}</pre>
+        </div>
+        
+        <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e7f3ff', borderRadius: '4px', border: '1px solid #b3d7ff' }}>
+          <h3 style={{ marginBottom: '0.5rem', fontWeight: '500' }}>Instructions:</h3>
+          <p style={{ fontSize: '0.875rem', margin: 0 }}>
+            <strong>Test Credentials:</strong><br />
+            Email: test@test.com<br />
+            Password: test123<br /><br />
+            Click "Test Login" to authenticate, "Check Session" to verify session state, or "Test Logout" to clear session.
+          </p>
+        </div>
       </div>
     </div>
   );

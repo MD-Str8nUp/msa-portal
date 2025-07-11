@@ -37,61 +37,68 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('parent');
 
-  // Update the fetchUserDetails function:
+  // Update the fetchUserDetails function to use API route (bypasses RLS issue):
   async function fetchUserDetails(userId) {
     try {
+      console.log('👤 AuthContext: fetchUserDetails called for userId:', userId);
       setLoading(true);
       
       // First, check if we already have a session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log('❌ AuthContext: No session found');
         setUserDetails(null);
         setLoading(false);
         return;
       }
       
-      // Get user profile from users table
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
+      console.log('🔄 AuthContext: Fetching user details via API...');
+      // Use API route to get user profile (bypasses RLS)
+      const response = await fetch(`/api/user?userId=${session.user.id}`);
       
-      if (error) {
-        console.error('Error fetching user details:', error);
+      if (!response.ok) {
+        console.error('❌ AuthContext: Error fetching user details from API');
         setLoading(false);
         return;
       }
       
-      if (data) {
-        console.log('User details fetched:', data); // Debug log
-        setUserDetails(data);
-        setViewMode(data.current_view_mode || 'parent');
+      const result = await response.json();
+      
+      if (result.user) {
+        console.log('✅ AuthContext: User details fetched successfully:', result.user);
+        setUserDetails(result.user);
+        setViewMode(result.user.current_view_mode || 'parent');
+        console.log('📱 AuthContext: Updated userDetails state, triggering re-render');
       } else {
-        console.warn('No user found with ID:', session.user.id);
+        console.warn('⚠️ AuthContext: No user found with ID:', session.user.id);
       }
     } catch (error) {
-      console.error('Error in fetchUserDetails:', error);
+      console.error('💥 AuthContext: Error in fetchUserDetails:', error);
     } finally {
       setLoading(false);
+      console.log('🏁 AuthContext: fetchUserDetails completed, loading set to false');
     }
   }
 
   // Sign in function
   const signIn = async (email, password) => {
     try {
+      console.log('🔐 AuthContext: Starting sign in...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.log('❌ AuthContext: Sign in error:', error.message);
         throw error;
       }
 
       if (data.user) {
+        console.log('✅ AuthContext: Auth successful, fetching user details...');
         await fetchUserDetails(data.user.id);
+        console.log('📊 AuthContext: User details fetched, userDetails state:', userDetails);
       }
 
       return { data, error: null };

@@ -38,18 +38,43 @@ export default function ParentDashboard() {
       
       try {
         setLoading(true);
+        console.log('📊 Fetching dashboard data for user:', userDetails.id);
         
-        // Get parent's scouts
-        const scouts = await scoutService.getScoutsByParent(userDetails.id);
-        setMyScouts(scouts || []);
+        // Get parent's scouts via API route (bypasses RLS)
+        try {
+          const scoutsResponse = await fetch(`/api/scouts/by-parent?parentId=${userDetails.id}`);
+          if (scoutsResponse.ok) {
+            const scoutsData = await scoutsResponse.json();
+            setMyScouts(scoutsData.scouts || []);
+            console.log('✅ Scouts fetched:', scoutsData.scouts);
+          } else {
+            console.error('❌ Failed to fetch scouts:', scoutsResponse.status);
+            setMyScouts([]);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching scouts:', error);
+          setMyScouts([]);
+        }
         
-        // Get upcoming events (filter and sort client-side for now)
-        const allEvents = await eventService.getAllEvents();
-        const upcoming = allEvents
-          .filter(event => new Date(event.start_date) > new Date())
-          .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
-          .slice(0, 3);
-        setUpcomingEvents(upcoming || []);
+        // Get upcoming events via API route (bypasses RLS)
+        try {
+          const eventsResponse = await fetch('/api/events/supabase');
+          if (eventsResponse.ok) {
+            const eventsData = await eventsResponse.json();
+            const upcoming = eventsData.events
+              .filter((event: any) => new Date(event.start_date) > new Date())
+              .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+              .slice(0, 3);
+            setUpcomingEvents(upcoming || []);
+            console.log('✅ Events fetched:', upcoming);
+          } else {
+            console.error('❌ Failed to fetch events:', eventsResponse.status);
+            setUpcomingEvents([]);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching events:', error);
+          setUpcomingEvents([]);
+        }
         
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

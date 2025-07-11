@@ -16,29 +16,39 @@ export default function LoginPage() {
   const router = useRouter();
   const { signIn, userDetails, loading } = useAuth();
   
-  // Check if user is already logged in
+  // Check if user is already logged in and redirect accordingly
   useEffect(() => {
+    console.log('🔄 Login page useEffect triggered');
+    console.log('   userDetails:', userDetails);
+    console.log('   loading:', loading);
+    
     if (userDetails && !loading) {
-      console.log("User already logged in:", userDetails);
-      // Redirect based on user role
-      switch (userDetails.role) {
-        case "parent":
-          router.push("/parent/dashboard");
-          break;
-        case "leader":
-          router.push("/leader/dashboard");
-          break;
-        case "exec":
-          router.push("/parent/dashboard"); // Executives can use parent view
-          break;
-        case "executive":
-          router.push("/executive/dashboard");
-          break;
-        default:
-          router.push("/");
-      }
+      console.log("🎯 User logged in, redirecting:", userDetails);
+      
+      // Add a small delay to ensure state is fully updated
+      setTimeout(() => {
+        // Redirect based on user role
+        switch (userDetails.role) {
+          case "parent":
+            console.log("📍 Redirecting to parent dashboard");
+            router.push("/parent/dashboard");
+            break;
+          case "leader":
+            console.log("📍 Redirecting to leader dashboard");
+            router.push("/leader/dashboard");
+            break;
+          case "exec":
+          case "executive":
+            console.log("📍 Redirecting to executive dashboard");
+            router.push("/executive/dashboard");
+            break;
+          default:
+            console.log("📍 Redirecting to default parent dashboard");
+            router.push("/parent/dashboard"); // Default fallback
+        }
+      }, 100); // Small delay to ensure state consistency
     }
-  }, [router]);
+  }, [userDetails, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,9 +69,11 @@ export default function LoginPage() {
 
       if (data?.user) {
         console.log("Login successful, user:", data.user);
-        // The AuthContext will handle redirection after fetching user details
+        console.log("Waiting for user details to be fetched...");
+        // Keep loading state true - the useEffect will handle redirect once userDetails is set
+        // We'll let the AuthContext manage the loading state
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during login:", error);
       setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
@@ -109,6 +121,12 @@ export default function LoginPage() {
         {error && (
           <div className="p-3 bg-red-100 border border-red-300 text-red-500 rounded-md">
             {error}
+          </div>
+        )}
+        
+        {isLoading && (
+          <div className="p-3 bg-blue-100 border border-blue-300 text-blue-700 rounded-md">
+            {userDetails ? "Redirecting to dashboard..." : "Signing in..."}
           </div>
         )}
         
