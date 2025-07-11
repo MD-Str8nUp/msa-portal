@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockScoutService, mockEventService } from "@/lib/mock/data";
+import { scoutService, eventService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { Button } from "@/components/ui/Button";
 import { 
@@ -21,23 +22,46 @@ import {
 } from "lucide-react";
 
 export default function ParentDashboard() {
-  // In a real app, this would come from auth context/session
-  const parentId = "user-1";
+  const { userDetails } = useAuth();
+  const [myScouts, setMyScouts] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Get parent's scouts
-  const myScouts = mockScoutService.getScouts(parentId);
-  
-  // Get upcoming events
-  const events = mockEventService.getEvents();
-  const upcomingEvents = events.filter(event => new Date(event.startDate) > new Date())
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-    .slice(0, 3);
-
-  // Mock data for demonstration
+  // Mock data for demonstration - will be replaced with real API calls later
   const pendingPermissionSlips = 2;
   const unreadMessages = 3;
-  const nextEvent = upcomingEvents[0];
   const volunteerOpportunities = 1;
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get parent's scouts
+        const scouts = await scoutService.getScoutsByParent(userDetails.id);
+        setMyScouts(scouts || []);
+        
+        // Get upcoming events (filter and sort client-side for now)
+        const allEvents = await eventService.getAllEvents();
+        const upcoming = allEvents
+          .filter(event => new Date(event.start_date) > new Date())
+          .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+          .slice(0, 3);
+        setUpcomingEvents(upcoming || []);
+        
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [userDetails]);
+
+  const nextEvent = upcomingEvents[0];
 
   return (
     <DashboardLayout 

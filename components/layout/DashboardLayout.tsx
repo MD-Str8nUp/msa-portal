@@ -9,7 +9,7 @@ import { X } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { cn } from "@/lib/utils";
-import { mockAuthService } from "@/lib/mock/data";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 // Import navigation if needed later
 // import { parentNavigation } from "../navigation/ParentNavigation";
@@ -36,9 +36,10 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useAuth();
 
-  const handleSignOut = () => {
-    mockAuthService.logout();
+  const handleSignOut = async () => {
+    await signOut();
     router.push("/login");
   };
 

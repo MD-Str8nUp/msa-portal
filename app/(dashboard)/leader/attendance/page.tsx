@@ -1,30 +1,74 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
-import { mockAttendance, mockGroupService, mockScoutService, mockEventService } from "@/lib/mock/data";
+import { eventService, groupService, scoutService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import AttendanceManager from "@/components/leader/AttendanceManager";
 import AttendanceHistory from "@/components/leader/AttendanceHistory";
+import { Group, Scout, Event } from "@/types";
 
 export default function LeaderAttendance() {
+  const { userDetails } = useAuth();
   const [currentTab, setCurrentTab] = useState("record");
+  const [loading, setLoading] = useState(true);
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [scouts, setScouts] = useState<Scout[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   
-  // In a real app, this would come from auth context
-  const leaderId = "user-2"; // Jane Smith
+  // Fetch attendance data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userDetails?.id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch groups for this leader
+        const groupsData = await groupService.getAllGroups();
+        const leaderGroups = groupsData.filter((group: any) => group.leaderId === userDetails.id);
+        setGroups(leaderGroups);
+
+        if (leaderGroups.length > 0) {
+          // Get scouts in the leader's groups
+          const scoutsData = await scoutService.getAllScouts();
+          const groupScouts = scoutsData.filter((scout: any) => 
+            leaderGroups.some((group: any) => group.id === scout.groupId)
+          );
+          setScouts(groupScouts);
+
+          // Get events
+          const eventsData = await eventService.getAllEvents();
+          setEvents(eventsData);
+        }
+        
+        // TODO: Implement attendance service
+        // For now, just set empty array
+        setAttendanceData([]);
+      } catch (error) {
+        console.error('Error fetching attendance data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [userDetails]);
   
-  // For demo purposes, get the first group associated with this leader
-  const groups = mockGroupService.getGroups();
-  const leaderGroups = groups.filter(group => group.leaderId === leaderId);
-  const leaderGroup = leaderGroups.length > 0 ? leaderGroups[0] : null;
+  // Get the first group for this demo
+  const leaderGroup = groups.length > 0 ? groups[0] : null;
   
   // Get scouts in the leader's group
-  const groupScouts = leaderGroup ? mockScoutService.getScouts(undefined, leaderGroup.id) : [];
+  const groupScouts = leaderGroup ? scouts.filter(scout => scout.groupId === leaderGroup.id) : [];
   
-  // Get group events
-  const groupEvents = leaderGroup ? mockEventService.getEvents(leaderGroup.id) : [];
-  const allEvents = mockEventService.getEvents(); // Include organization-wide events
+  // Get group and organization events
+  const groupEvents = events.filter(event => 
+    event.groupId === leaderGroup?.id || event.groupId === null
+  );
+  const allEvents = events; // Include organization-wide events
   
   // Handle saving attendance
   const handleSaveAttendance = (attendanceRecords: any[], date: string, eventId?: string) => {
@@ -77,7 +121,7 @@ export default function LeaderAttendance() {
               groupId={leaderGroup.id}
               groupName={leaderGroup.name}
               onSaveAttendance={handleSaveAttendance}
-              existingAttendance={mockAttendance}
+              existingAttendance={attendanceData}
               events={allEvents}
             />
           </TabsContent>
@@ -86,7 +130,7 @@ export default function LeaderAttendance() {
           <TabsContent value="history" className="mt-4">
             <AttendanceHistory
               scouts={groupScouts}
-              attendance={mockAttendance}
+              attendance={attendanceData}
               groupName={leaderGroup.name}
               onContactParent={handleContactParent}
               onExportReport={handleExportReport}

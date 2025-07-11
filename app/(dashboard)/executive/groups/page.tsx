@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { executiveNavigation } from "@/components/navigation/ExecutiveNavigation";
+import { groupService } from "@/lib/services/supabaseService";
 import { mockGroupService } from "@/lib/mock/data";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";

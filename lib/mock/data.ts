@@ -50,7 +50,8 @@ export const groups: Group[] = [
     location: "Community Center A",
     meetingDay: "Monday",
     meetingTime: "16:00",
-    memberCount: 12
+    memberCount: 12,
+    maxMembers: 20
   },
   {
     id: "group-2",
@@ -60,7 +61,8 @@ export const groups: Group[] = [
     location: "Library Hall",
     meetingDay: "Wednesday",
     meetingTime: "17:00",
-    memberCount: 15
+    memberCount: 15,
+    maxMembers: 18
   },
   {
     id: "group-3",
@@ -70,7 +72,8 @@ export const groups: Group[] = [
     location: "School Gymnasium",
     meetingDay: "Thursday",
     meetingTime: "16:30",
-    memberCount: 9
+    memberCount: 9,
+    maxMembers: 15
   }
 ];
 

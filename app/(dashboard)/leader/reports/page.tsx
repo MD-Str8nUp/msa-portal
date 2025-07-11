@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { Input } from "@/components/ui/Input";
-import { mockReports } from "@/lib/mock/data";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function LeaderReportsPage() {
+  const { userDetails } = useAuth();
+  
   const [activeTab, setActiveTab] = useState("incidents");
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -22,7 +24,15 @@ export default function LeaderReportsPage() {
     severity: 'low',
     category: 'behavior'
   });
-  const [reports, setReports] = useState(mockReports);
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // TODO: Replace with actual Supabase service call for reports
+  useEffect(() => {
+    // For now, just set empty reports since reports service is not implemented
+    setReports([]);
+    setLoading(false);
+  }, [userDetails]);
   
   // Helper to filter reports by type and search term
   const filterReports = (type: string) => {

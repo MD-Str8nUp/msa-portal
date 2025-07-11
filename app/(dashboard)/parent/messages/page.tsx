@@ -1,30 +1,67 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockMessageService, mockAuthService } from "@/lib/mock/data";
+import { messageService, userService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { Button } from "@/components/ui/Button";
 import { useSocketContext } from "@/lib/contexts/SocketContext";
 
 export default function ParentMessagesPage() {
-  // Get current user from socket context
+  const { userDetails } = useAuth();
   const { messages: socketMessages, sendMessage, isConnected } = useSocketContext();
   
-  // For compatibility during transition, also get mock data
-  const currentUser = mockAuthService.getCurrentUser();
-  const parentId = currentUser?.id || "user-1";
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [availableRecipients, setAvailableRecipients] = useState<any[]>([]);
   
   // State for new message
   const [newMessageText, setNewMessageText] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState("");
   const [showMessageForm, setShowMessageForm] = useState(false);
   
-  // Combine real and mock messages during transition
-  const mockMessages = mockMessageService.getMessages(parentId);
-  const combinedMessages = [...(socketMessages || []), ...mockMessages];
+  // Fetch messages from Supabase
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        const userMessages = await messageService.getMessagesByUser(userDetails.id);
+        setMessages(userMessages || []);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [userDetails]);
+  
+  // Fetch available recipients (leaders and executives)
+  useEffect(() => {
+    const fetchRecipients = async () => {
+      try {
+        const allUsers = await userService.getAllUsers();
+        // Filter for leaders and executives only
+        const recipients = allUsers.filter(user => 
+          user.role === 'leader' || user.role === 'exec' || user.is_also_leader
+        );
+        setAvailableRecipients(recipients);
+      } catch (error) {
+        console.error('Error fetching recipients:', error);
+      }
+    };
+    
+    fetchRecipients();
+  }, []);
+  
+  // Combine real and socket messages during transition
+  const combinedMessages = [...(socketMessages || []), ...messages];
   
   // Remove duplicates (in case messages appear in both systems)
   const uniqueMessages = combinedMessages.filter((message, index, self) => 
@@ -77,8 +114,21 @@ export default function ParentMessagesPage() {
                   onChange={(e) => setSelectedRecipient(e.target.value)}
                 >
                   <option value="">Select a recipient</option>
-                  <option value="user-2">Jane Smith (Leader)</option>
-                  <option value="user-3">Michael Johnson (Executive)</option>
+                  {availableRecipients.map((user) => {
+                    const displayName = user.full_name || 
+                                       (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') ||
+                                       user.first_name || 
+                                       user.email?.split('@')[0] || 
+                                       'User';
+                    const roleDisplay = user.role === 'exec' ? 'Executive' : 
+                                       user.role === 'leader' ? 'Leader' : 
+                                       user.is_also_leader ? 'Leader' : 'Staff';
+                    return (
+                      <option key={user.id} value={user.id}>
+                        {displayName} ({roleDisplay})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div>

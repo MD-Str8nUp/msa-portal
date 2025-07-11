@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockEventService, mockScoutService } from "@/lib/mock/data";
+import { eventService, scoutService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Modal";
@@ -25,28 +26,62 @@ import EventDetailModal from "@/components/events/EventDetailModal";
 import RsvpCard from "@/components/events/RsvpCard";
 
 export default function ParentEventsPage() {
+  const { userDetails } = useAuth();
+  const [events, setEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [myScouts, setMyScouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [permissionModalOpen, setPermissionModalOpen] = useState(false);
   const [signatureValue, setSignatureValue] = useState("");
   const [permissionSigned, setPermissionSigned] = useState<Record<string, boolean>>({});
   const [rsvpStatus, setRsvpStatus] = useState<Record<string, 'attending' | 'not-attending' | 'pending'>>({});
   
-  // In a real app, this would come from auth context/session
-  const parentId = "user-1";
-  
-  // Get parent's scouts
-  const myScouts = mockScoutService.getScouts(parentId);
-    // Get upcoming events
-  const allEvents = mockEventService.getEvents();
-  const upcomingEvents = allEvents.filter(event => new Date(event.startDate) > new Date())
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    
   // State for event detail modal
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [eventDetailModalOpen, setEventDetailModalOpen] = useState(false);
 
+  // Fetch data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get parent's scouts
+        const scouts = await scoutService.getScoutsByParent(userDetails.id);
+        setMyScouts(scouts || []);
+        
+        // Get all events
+        const allEvents = await eventService.getAllEvents();
+        
+        // Split into upcoming and past events
+        const now = new Date();
+        const upcoming = allEvents
+          .filter(event => new Date(event.start_date) > now)
+          .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+        
+        const past = allEvents
+          .filter(event => new Date(event.end_date) < now)
+          .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+          
+        setEvents(upcoming || []);
+        setPastEvents(past || []);
+        
+      } catch (error) {
+        console.error('Error fetching events data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [userDetails]);
+
   // Get closest upcoming event
-  const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+  const nextEvent = events.length > 0 ? events[0] : null;
   
   // Function to handle RSVP
   const handleRsvp = (eventId: string, status: 'attending' | 'not-attending') => {
@@ -56,7 +91,7 @@ export default function ParentEventsPage() {
     }));
     
     // If this event requires permission slip and the user is attending
-    const event = allEvents.find(e => e.id === eventId);
+    const event = events.find(e => e.id === eventId);
     if (event?.requiresPermissionSlip && status === 'attending' && !permissionSigned[eventId]) {
       setActiveEventId(eventId);
       setPermissionModalOpen(true);
@@ -214,8 +249,8 @@ export default function ParentEventsPage() {
             
             <TabsContent value="upcoming" className="p-6">
               <div className="grid grid-cols-1 gap-4">
-                {upcomingEvents.length > 0 ? (
-                  upcomingEvents.map(event => (
+                {events.length > 0 ? (
+                  events.map((event: any) => (
                     <Card key={event.id} className="overflow-hidden">
                       <CardHeader className="pb-3">
                         <div className="flex justify-between">
@@ -284,10 +319,8 @@ export default function ParentEventsPage() {
             
             <TabsContent value="past" className="p-6">
               <div className="grid grid-cols-1 gap-4">
-                {allEvents
-                  .filter(event => new Date(event.endDate) < new Date())
-                  .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                  .map(event => (
+                {pastEvents
+                  .map((event: any) => (
                     <Card key={event.id} className="overflow-hidden opacity-75">
                       <CardHeader className="pb-3">
                         <div className="flex justify-between">
@@ -329,7 +362,7 @@ export default function ParentEventsPage() {
                       </CardFooter>
                     </Card>
                   ))}
-                {allEvents.filter(event => new Date(event.endDate) < new Date()).length === 0 && (
+                {pastEvents.length === 0 && (
                   <p className="text-gray-500 text-center py-8">
                     No past events found.
                   </p>

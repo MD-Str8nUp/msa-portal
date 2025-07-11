@@ -4,16 +4,15 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
-import { mockEventService, mockAuthService } from "@/lib/mock/data";
+import { eventService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { RefreshCcw, Calendar, Info, CheckCircle } from "lucide-react";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { useSocketContext } from "@/lib/contexts/SocketContext";
 
 export default function LeaderEventsPage() {
-  // Get current user
-  const currentUser = mockAuthService.getCurrentUser();
-  const leaderId = currentUser?.id || "user-2"; // Default to user-2 as the leader
+  const { userDetails } = useAuth();
   
   // Get socket context for events
   const { events: socketEvents, isConnected, updateEventRSVP } = useSocketContext();
@@ -31,32 +30,27 @@ export default function LeaderEventsPage() {
     type: 'meeting'
   });
   
-  // Fetch events from API
+  // Fetch events from Supabase
   useEffect(() => {
     const fetchEvents = async () => {
+      if (!userDetails) return;
+      
       setIsLoading(true);
       try {
-        const response = await fetch('/api/events');
-        if (response.ok) {
-          const data = await response.json();
-          setEvents(data);
-        } else {
-          // Fallback to mock data
-          setEvents(mockEventService.getEvents());
-        }
+        const data = await eventService.getAllEvents();
+        setEvents(data || []);
       } catch (error) {
         console.error('Error fetching events:', error);
-        // Fallback to mock data
-        setEvents(mockEventService.getEvents());
+        setEvents([]);
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchEvents();
-  }, []);
+  }, [userDetails]);
   
-  // Combine events from socket and API
+  // Combine events from socket and Supabase
   const combinedEvents = [...(socketEvents || []), ...events];
   
   // Remove duplicates
@@ -66,8 +60,8 @@ export default function LeaderEventsPage() {
   
   // Sort events by date
   const upcomingEvents = uniqueEvents
-    .filter(event => new Date(event.startDate) > new Date())
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    .filter(event => new Date(event.start_date || event.startDate) > new Date())
+    .sort((a, b) => new Date(a.start_date || a.startDate).getTime() - new Date(b.start_date || b.startDate).getTime());
   
   const pastEvents = uniqueEvents
     .filter(event => new Date(event.endDate) < new Date())
@@ -94,7 +88,7 @@ export default function LeaderEventsPage() {
   const submitAttendance = (eventId: string) => {
     updateEventRSVP({
       scoutId: "scout-1", // This would need to be adjusted
-      userId: leaderId,
+      userId: userDetails?.id,
       eventId,
       groupId: "group-1", // This would need to be adjusted
       status: "completed",
@@ -116,7 +110,7 @@ export default function LeaderEventsPage() {
       startDate: newEvent.startDate,
       endDate: newEvent.endDate,
       type: newEvent.type,
-      createdBy: leaderId,
+      createdBy: userDetails?.id,
       createdAt: new Date().toISOString()
     };
     

@@ -72,6 +72,7 @@ export interface Group {
   meetingDay: string;
   meetingTime: string;
   memberCount: number;
+  maxMembers: number;
   description?: string;
 }
 

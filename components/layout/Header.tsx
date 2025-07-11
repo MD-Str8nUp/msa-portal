@@ -7,7 +7,8 @@ import Image from "next/image";
 import ChildSelector from "@/components/selectors/ChildSelector";
 import GroupSelector from "@/components/selectors/GroupSelector";
 import UserMenu from "@/components/ui/UserMenu";
-import { mockScoutService, mockGroupService, mockAuthService } from "@/lib/mock/data";
+import { scoutService, groupService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 interface HeaderProps {
   setSidebarOpenAction: (open: boolean) => void;
@@ -17,6 +18,7 @@ interface HeaderProps {
 
 export default function Header({ setSidebarOpenAction, pageTitle, userRole = "parent" }: HeaderProps) {
   const router = useRouter();
+  const { userDetails } = useAuth();
   
   // For parent role
   const [selectedScoutId, setSelectedScoutId] = useState<string | null>(null);
@@ -25,9 +27,6 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
   // For leader role
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [myGroups, setMyGroups] = useState<any[]>([]);
-  
-  // Get current user
-  const currentUser = mockAuthService.getCurrentUser();
   
   // Use memoized callbacks to prevent unnecessary re-renders
   const handleScoutChange = useCallback((scoutId: string) => {
@@ -44,40 +43,42 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
 
   // Initialize data only once when component mounts
   useEffect(() => {
-    // Only run this effect if userRole and currentUser are defined
-    if (!userRole || !currentUser) return;
-    
-    try {
-      // If parent, get their scouts
-      if (userRole === "parent") {
-        const parentScouts = mockScoutService.getScouts(currentUser.id);
-        if (Array.isArray(parentScouts)) {
-          setMyScouts(parentScouts);
-          
-          // Only set selectedScoutId if there are scouts
-          if (parentScouts.length > 0) {
-            setSelectedScoutId(parentScouts[0].id);
-          }
-        }
-      }
+    const fetchData = async () => {
+      if (!userRole || !userDetails) return;
       
-      // If leader, get their groups
-      if (userRole === "leader") {
-        const groups = mockGroupService.getGroups();
-        if (Array.isArray(groups)) {
-          setMyGroups(groups); 
-          
-          // Only set selectedGroupId if there are groups
-          if (groups.length > 0) {
-            setSelectedGroupId(groups[0].id);
+      try {
+        // If parent, get their scouts
+        if (userRole === "parent") {
+          const parentScouts = await scoutService.getScoutsByParent(userDetails.id);
+          if (Array.isArray(parentScouts)) {
+            setMyScouts(parentScouts);
+            
+            // Only set selectedScoutId if there are scouts
+            if (parentScouts.length > 0) {
+              setSelectedScoutId(parentScouts[0].id);
+            }
           }
         }
+        
+        // If leader, get their groups
+        if (userRole === "leader") {
+          const groups = await groupService.getAllGroups();
+          if (Array.isArray(groups)) {
+            setMyGroups(groups); 
+          
+            // Only set selectedGroupId if there are groups
+            if (groups.length > 0) {
+              setSelectedGroupId(groups[0].id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing header data:', error);
       }
-    } catch (error) {
-      console.error('Error initializing header data:', error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userRole, currentUser?.id]);
+    };
+
+    fetchData();
+  }, [userRole, userDetails?.id]);
 
   return (
     <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-msa-soft-white shadow-sm border-b border-msa-light-sage/30">
@@ -181,7 +182,7 @@ export default function Header({ setSidebarOpenAction, pageTitle, userRole = "pa
           </div>
 
           {/* User profile dropdown */}
-          <UserMenu user={currentUser} />
+          <UserMenu user={userDetails} />
         </div>
       </div>
     </div>

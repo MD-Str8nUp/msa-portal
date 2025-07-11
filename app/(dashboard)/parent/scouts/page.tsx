@@ -4,8 +4,8 @@ import React, { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockScoutService, mockGroupService } from "@/lib/mock/data";
-import { auth } from "@/lib/auth";
+import { scoutService, groupService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Plus, Info, Award, Calendar, RefreshCcw } from "lucide-react";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
@@ -15,96 +15,47 @@ import { Scout } from "@/types";
 import { useSocketContext } from "@/lib/contexts/SocketContext";
 
 export default function ParentScoutsPage() {
-  // State for current user
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [parentId, setParentId] = useState<string>("user-1");
+  const { userDetails } = useAuth();
+  const [scouts, setScouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Get socket context data
   const { isConnected, achievements } = useSocketContext();
   
   // State for scouts and groups
-  const [scouts, setScouts] = useState<Scout[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
   // State for modals
   const [selectedScout, setSelectedScout] = useState<Scout | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   
-  // Fetch current user from real auth service
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const user = await auth.getCurrentUser();
-        if (user && user.id) {
-          setCurrentUser(user);
-          setParentId(user.id);
-        } else {
-          // Fallback for development
-          console.warn('No authenticated user found, using fallback');
-          setParentId("user-1");
-        }
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-        setParentId("user-1");
-      }
-    };
-    
-    fetchCurrentUser();
-  }, []);
-  
-  // Fetch scouts and groups from API
+  // Fetch scouts and groups from Supabase
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      if (!userDetails) return;
+      
+      setLoading(true);
       try {
-        // Fetch scouts from API
-        const scoutsResponse = await fetch(`/api/scouts?parentId=${parentId}`);
-        if (scoutsResponse.ok) {
-          const scoutsData = await scoutsResponse.json();
-          if (Array.isArray(scoutsData)) {
-            setScouts(scoutsData);
-          } else {
-            console.warn('Scouts API returned non-array, using mock data');
-            setScouts(mockScoutService.getScouts(parentId) || []);
-          }
-        } else {
-          console.warn(`Scouts API failed with status ${scoutsResponse.status}, using mock data`);
-          setScouts(mockScoutService.getScouts(parentId) || []);
-        }
+        // Fetch scouts from Supabase
+        const scoutsData = await scoutService.getScoutsByParent(userDetails.id);
+        setScouts(scoutsData || []);
         
-        // Fetch groups from API
-        const groupsResponse = await fetch('/api/groups');
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json();
-          if (Array.isArray(groupsData)) {
-            setGroups(groupsData);
-          } else {
-            console.warn('Groups API returned non-array, using mock data');
-            setGroups(mockGroupService.getGroups() || []);
-          }
-        } else {
-          console.warn(`Groups API failed with status ${groupsResponse.status}, using mock data`);
-          setGroups(mockGroupService.getGroups() || []);
-        }
+        // Fetch groups from Supabase
+        const groupsData = await groupService.getAllGroups();
+        setGroups(groupsData || []);
+        
       } catch (error) {
         console.error('Error fetching data:', error);
-        // Fallback to mock data with safety checks
-        const mockScouts = mockScoutService.getScouts(parentId);
-        const mockGroups = mockGroupService.getGroups();
-        setScouts(Array.isArray(mockScouts) ? mockScouts : []);
-        setGroups(Array.isArray(mockGroups) ? mockGroups : []);
+        setScouts([]);
+        setGroups([]);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    // Fetch data when parentId is available
-    if (parentId) {
-      fetchData();
-    }
-  }, [parentId]);
+    fetchData();
+  }, [userDetails]);
   
   // Calculate achievements per scout
   const scoutAchievements = useCallback((scoutId: string) => {
@@ -130,72 +81,39 @@ export default function ParentScoutsPage() {
   }, [scouts]);
   
   const handleAddScout = async (scoutData: any) => {
+    if (!userDetails) return;
+    
     try {
-      const response = await fetch('/api/scouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...scoutData,
-          parentId,
-        }),
+      const newScout = await scoutService.createScout({
+        ...scoutData,
+        parent_id: userDetails.id,
       });
       
-      if (response.ok) {
-        const newScout = await response.json();
-        
+      if (newScout) {
         // Update local state with new scout (optimistic update)
         setScouts(prevScouts => [...prevScouts, newScout]);
         
         // Close the modal
         setAddModalOpen(false);
-      } else {
-        console.error('Failed to add scout:', await response.text());
-        
-        // Fallback to mock service
-        mockScoutService.addScout({
-          ...scoutData,
-          parentId
-        });
-        setScouts(mockScoutService.getScouts(parentId));
-        setAddModalOpen(false);
       }
     } catch (error) {
       console.error('Error adding scout:', error);
-      
-      // Fallback to mock service
-      mockScoutService.addScout({
-        ...scoutData,
-        parentId
-      });
-      setScouts(mockScoutService.getScouts(parentId));
-      setAddModalOpen(false);
+      alert('Failed to add scout. Please try again.');
     }
   };
   
   // Refresh data
   const refreshData = async () => {
-    setIsLoading(true);
+    if (!userDetails) return;
+    
+    setLoading(true);
     try {
-      const response = await fetch(`/api/scouts?parentId=${parentId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setScouts(data);
-        } else {
-          console.warn('Refresh API returned non-array, using mock data');
-          setScouts(mockScoutService.getScouts(parentId) || []);
-        }
-      } else {
-        console.warn('Refresh API failed, using mock data');
-        setScouts(mockScoutService.getScouts(parentId) || []);
-      }
+      const scoutsData = await scoutService.getScoutsByParent(userDetails.id);
+      setScouts(scoutsData || []);
     } catch (error) {
       console.error('Error refreshing data:', error);
-      setScouts(mockScoutService.getScouts(parentId) || []);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
   
@@ -213,11 +131,11 @@ export default function ParentScoutsPage() {
             <Button 
               variant="outline" 
               onClick={refreshData} 
-              disabled={isLoading}
+              disabled={loading}
               className="flex items-center space-x-2"
             >
-              <RefreshCcw size={16} className={isLoading ? "animate-spin" : ""} />
-              <span>{isLoading ? "Loading..." : "Refresh"}</span>
+              <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
+              <span>{loading ? "Loading..." : "Refresh"}</span>
             </Button>
             <Button 
               className="flex items-center space-x-2" 
@@ -237,7 +155,7 @@ export default function ParentScoutsPage() {
         
         {/* Scouts List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading ? (
+          {loading ? (
             <div className="col-span-full flex justify-center py-12">
               <div className="flex flex-col items-center space-y-4">
                 <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
@@ -273,7 +191,7 @@ export default function ParentScoutsPage() {
                     </div>
                     <div className="flex items-center text-sm text-green-600">
                       <Calendar size={16} className="mr-1" />
-                      <span>{scout.attendance && Array.isArray(scout.attendance) && scout.attendance.length > 0 ? Math.round((scout.attendance.filter(a => a.present).length / scout.attendance.length) * 100) + '%' : '90%'} Attendance</span>
+                      <span>{scout.attendance && Array.isArray(scout.attendance) && scout.attendance.length > 0 ? Math.round((scout.attendance.filter((a: any) => a.present).length / scout.attendance.length) * 100) + '%' : '90%'} Attendance</span>
                     </div>
                   </div>
                 </CardContent>

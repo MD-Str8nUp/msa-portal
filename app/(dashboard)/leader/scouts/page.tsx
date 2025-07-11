@@ -1,41 +1,70 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
-import { mockScoutService, mockGroupService } from "@/lib/mock/data";
+import { scoutService, groupService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 import { Input } from "@/components/ui/Input";
-import { Scout } from "@/types";
 import AchievementRecordingModal from "@/components/leader/AchievementRecordingModal";
 
 export default function LeaderScoutsPage() {
-  // In a real app, this would come from auth context/session
-  const leaderId = "user-2";
+  const { userDetails } = useAuth();
   
-  // For demo purposes, get the first group associated with this leader
-  const groups = mockGroupService.getGroups();
-  const leaderGroups = groups.filter(group => group.leaderId === leaderId);
-  const groupId = leaderGroups.length > 0 ? leaderGroups[0].id : null;
+  // State
+  const [scouts, setScouts] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Get scouts in the leader's group
-  const scouts = groupId ? mockScoutService.getScouts(undefined, groupId) : [];
-
   // State for search and selected scout
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedScout, setSelectedScout] = useState<Scout | null>(null);
+  const [selectedScout, setSelectedScout] = useState<any | null>(null);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
   const [achievements, setAchievements] = useState<any[]>([]);
   
+  // Fetch data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get groups led by this user
+        const allGroups = await groupService.getAllGroups();
+        const leaderGroups = allGroups.filter(group => group.leader_id === userDetails.id);
+        setGroups(leaderGroups);
+        
+        // Get scouts from leader's groups
+        if (leaderGroups.length > 0) {
+          const groupId = leaderGroups[0].id;
+          const groupScouts = await scoutService.getScoutsByGroup(groupId);
+          setScouts(groupScouts);
+        }
+      } catch (error) {
+        console.error('Error fetching scouts data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [userDetails]);
+  
   // Filter scouts based on search
-  const filteredScouts = scouts.filter(scout => 
-    scout.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredScouts = scouts.filter(scout => {
+    const scoutName = scout.full_name || 
+                     (scout.first_name && scout.last_name ? `${scout.first_name} ${scout.last_name}` : '') ||
+                     scout.first_name || 
+                     'Unknown Scout';
+    return scoutName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   // Handle opening achievement modal
-  const openAchievementModal = (scout: Scout) => {
+  const openAchievementModal = (scout: any) => {
     setSelectedScout(scout);
     setShowAchievementModal(true);
   };

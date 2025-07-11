@@ -1,28 +1,71 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { mockUsers, mockMessages, mockScoutService, mockGroupService } from "@/lib/mock/data";
+import { messageService, userService, scoutService, groupService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { formatDate } from "@/lib/utils";
 
 export default function LeaderMessagesPage() {
-  // In a real app, get the current user from auth context
-  const currentUserId = "user-2"; // Jane Smith (Leader)
-  const currentUser = mockUsers.find(user => user.id === currentUserId);
+  const { userDetails } = useAuth();
   
-  // Get leader's group info
-  const groups = mockGroupService.getGroups();
-  const leaderGroups = groups.filter(group => group.leaderId === currentUserId);
-  const groupId = leaderGroups.length > 0 ? leaderGroups[0].id : null;
+  // State
+  const [messages, setMessages] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [parents, setParents] = useState<any[]>([]);
+  const [scouts, setScouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Get parents of scouts in leader's group
-  const groupScouts = groupId ? mockScoutService.getScouts(undefined, groupId) : [];
-  const parentIds = [...new Set(groupScouts.filter(scout => scout.parentId).map(scout => scout.parentId!))];
-  const parents = mockUsers.filter(user => parentIds.includes(user.id));
+  // Fetch data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get leader's groups
+        const allGroups = await groupService.getAllGroups();
+        const leaderGroups = allGroups.filter(group => group.leader_id === userDetails.id);
+        setGroups(leaderGroups);
+        
+        // Get messages for this user
+        const userMessages = await messageService.getMessagesByUser(userDetails.id);
+        setMessages(userMessages || []);
+        
+        // Get parents from leader's groups
+        if (leaderGroups.length > 0) {
+          const groupId = leaderGroups[0].id;
+          const groupScouts = await scoutService.getScoutsByGroup(groupId);
+          setScouts(groupScouts);
+          
+          const parentIds = [...new Set(groupScouts.filter((scout: any) => scout.parent_id).map((scout: any) => scout.parent_id!))];
+          
+          if (parentIds.length > 0) {
+            const allUsers = await userService.getAllUsers();
+            const parentUsers = allUsers.filter((user: any) => parentIds.includes(user.id));
+            setParents(parentUsers);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching messages data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [userDetails]);
+  
+  // Get first group for this leader (demo purposes)
+  const leaderGroup = groups.length > 0 ? groups[0] : null;
+  
+  // Get scouts in the leader's group
+  const groupScouts = leaderGroup ? scouts.filter((scout: any) => scout.groupId === leaderGroup.id) : [];
   
   // States
   const [selectedParentId, setSelectedParentId] = useState<string | null>(parents.length > 0 ? parents[0].id : null);
@@ -34,10 +77,10 @@ export default function LeaderMessagesPage() {
     // Group messages by conversation partner
     const convos: Record<string, any[]> = {};
     
-    mockMessages
-      .filter(msg => msg.senderId === currentUserId || msg.receiverId === currentUserId)
+    messages
+      .filter(msg => msg.senderId === userDetails?.id || msg.receiverId === userDetails?.id)
       .forEach(msg => {
-        const partnerId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+        const partnerId = msg.senderId === userDetails?.id ? msg.receiverId : msg.senderId;
         if (!convos[partnerId]) {
           convos[partnerId] = [];
         }
@@ -54,17 +97,18 @@ export default function LeaderMessagesPage() {
 
   // Helper to get user by ID
   const getUserById = (userId: string) => {
-    return mockUsers.find(u => u.id === userId);
+    return parents.find((u: any) => u.id === userId) || 
+           (userDetails?.id === userId ? userDetails : null);
   };
   
   // Send a message
   const sendMessage = () => {
-    if (!messageText.trim() || !selectedParentId) return;
+    if (!messageText.trim() || !selectedParentId || !userDetails?.id) return;
     
     // Create a new message
     const newMessage = {
       id: `msg-${Date.now()}`,
-      senderId: currentUserId,
+      senderId: userDetails.id,
       receiverId: selectedParentId,
       content: messageText,
       timestamp: new Date().toISOString(),
@@ -87,15 +131,15 @@ export default function LeaderMessagesPage() {
   
   // Send group announcement
   const sendGroupAnnouncement = () => {
-    if (!announcementText.trim()) return;
+    if (!announcementText.trim() || !userDetails?.id || !leaderGroup?.id) return;
     
     const announcement = {
       id: `announcement-${Date.now()}`,
-      senderId: currentUserId,
+      senderId: userDetails.id,
       content: announcementText,
       timestamp: new Date().toISOString(),
       type: 'group_announcement',
-      groupId: groupId,
+      groupId: leaderGroup.id,
       recipientCount: parents.length
     };
     
@@ -240,7 +284,7 @@ export default function LeaderMessagesPage() {
               {/* Messages */}
               <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-gray-50">
                 {conversations[selectedParentId]?.map((message, index) => {
-                  const isFromMe = message.senderId === currentUserId;
+                  const isFromMe = message.senderId === userDetails?.id;
                   
                   return (
                     <div key={message.id} className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}>

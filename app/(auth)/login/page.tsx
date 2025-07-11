@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { mockAuthService } from "@/lib/mock/data";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Heart, Moon } from "lucide-react";
@@ -14,19 +14,22 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { signIn, userDetails, loading } = useAuth();
   
   // Check if user is already logged in
   useEffect(() => {
-    const currentUser = mockAuthService.getCurrentUser();
-    if (currentUser) {
-      console.log("User already logged in:", currentUser);
+    if (userDetails && !loading) {
+      console.log("User already logged in:", userDetails);
       // Redirect based on user role
-      switch (currentUser.role) {
+      switch (userDetails.role) {
         case "parent":
           router.push("/parent/dashboard");
           break;
         case "leader":
           router.push("/leader/dashboard");
+          break;
+        case "exec":
+          router.push("/parent/dashboard"); // Executives can use parent view
           break;
         case "executive":
           router.push("/executive/dashboard");
@@ -37,93 +40,29 @@ export default function LoginPage() {
     }
   }, [router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted with:", { email, password });
     setError("");
     setIsLoading(true);
 
     try {
-      const user = mockAuthService.login(email, password);
-      console.log("Login response:", user);
+      const { data, error: signInError } = await signIn(email, password);
+      console.log("Login response:", { data, error: signInError });
       
-      if (!user) {
-        console.log("Login failed, setting error");
-        setError("Invalid email or password");
+      if (signInError) {
+        console.log("Login failed:", signInError.message);
+        setError(signInError.message || "Invalid email or password");
         setIsLoading(false);
         return;
       }
 
-      console.log("Login successful, redirecting to dashboard for role:", user.role);
-      
-      // Redirect based on user role
-      switch (user.role) {
-        case "parent":
-          router.push("/parent/dashboard");
-          break;
-        case "leader":
-          router.push("/leader/dashboard");
-          break;
-        case "executive":
-          router.push("/executive/dashboard");
-          break;
-        default:
-          router.push("/");
+      if (data?.user) {
+        console.log("Login successful, user:", data.user);
+        // The AuthContext will handle redirection after fetching user details
       }
     } catch (error) {
       console.error("Error during login:", error);
-      setError("An unexpected error occurred. Please try again.");
-      setIsLoading(false);
-    }
-  };
-
-  // For demo purposes, provide quick login buttons
-  const handleQuickLogin = (role: "parent" | "leader" | "executive") => {
-    let demoEmail = "";
-    setIsLoading(true);
-    
-    switch (role) {
-      case "parent":
-        demoEmail = "john@example.com";
-        break;
-      case "leader":
-        demoEmail = "jane@example.com";
-        break;
-      case "executive":
-        demoEmail = "michael@example.com";
-        break;
-    }
-    
-    // Set credentials
-    setEmail(demoEmail);
-    setPassword("password");
-    
-    try {
-      // Perform login
-      const user = mockAuthService.login(demoEmail, "password");
-      
-      if (!user) {
-        setError("Quick login failed. Please try again.");
-        setIsLoading(false);
-        return;
-      }
-      
-      // Redirect based on user role
-      switch (user.role) {
-        case "parent":
-          router.push("/parent/dashboard");
-          break;
-        case "leader":
-          router.push("/leader/dashboard");
-          break;
-        case "executive":
-          router.push("/executive/dashboard");
-          break;
-        default:
-          router.push("/");
-      }
-    } catch (error) {
-      console.error("Error during quick login:", error);
       setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
@@ -216,46 +155,6 @@ export default function LoginPage() {
             </Button>
           </div>
         </form>
-        
-        <div className="mt-6 border-t border-msa-light-sage/30 pt-6">
-          <div className="text-center mb-3">
-            <p className="text-sm text-msa-charcoal font-secondary">
-              Quick demo login:
-            </p>
-            <p className="text-xs text-msa-sage">
-              Quick demo access
-            </p>
-          </div>
-          <div className="flex justify-center space-x-2 mt-3">
-            <Button 
-              variant="msa-outline" 
-              size="sm"
-              onClick={() => handleQuickLogin("parent")}
-              disabled={isLoading}
-              className="font-primary"
-            >
-              👨‍👩‍👧‍👦 Parent
-            </Button>
-            <Button 
-              variant="msa-outline" 
-              size="sm"
-              onClick={() => handleQuickLogin("leader")}
-              disabled={isLoading}
-              className="font-primary"
-            >
-              🧑‍🏫 Leader
-            </Button>
-            <Button 
-              variant="msa-outline" 
-              size="sm"
-              onClick={() => handleQuickLogin("executive")}
-              disabled={isLoading}
-              className="font-primary"
-            >
-              👔 Executive
-            </Button>
-          </div>
-        </div>
         
         {/* Islamic Footer */}
         <div className="text-center border-t border-msa-light-sage/30 pt-4">

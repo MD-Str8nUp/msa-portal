@@ -1,21 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockScoutService } from "@/lib/mock/data";
+import { scoutService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { formatDate } from "@/lib/utils";
 import { Lock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 
 export default function ParentAdminPage() {
-  // In a real app, this would come from auth context/session
-  const parentId = "user-1";
+  const { userDetails } = useAuth();
+  const [scouts, setScouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Get parent's scouts
-  const myScouts = mockScoutService.getScouts(parentId);
-  const selectedScout = myScouts.length > 0 ? myScouts[0] : null;
+  // Fetch scouts for this parent
+  useEffect(() => {
+    const fetchScouts = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        const parentScouts = await scoutService.getScoutsByParent(userDetails.id);
+        setScouts(parentScouts || []);
+      } catch (error) {
+        console.error('Error fetching scouts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchScouts();
+  }, [userDetails]);
+  
+  // Get first scout for this demo (should be fetched from userDetails.childrenIds in real implementation)
+  const selectedScout = scouts.length > 0 ? scouts[0] : null;
   
   // Mock personal information
   const personalInfo = {

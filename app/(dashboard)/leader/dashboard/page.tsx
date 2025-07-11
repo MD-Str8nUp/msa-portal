@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
-import { mockGroupService, mockScoutService } from "@/lib/mock/data";
+import { groupService, scoutService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import GroupManagement from "@/components/leader/GroupManagement";
 import ActivityTimeline from "@/components/leader/ActivityTimeline";
 import { useRouter } from "next/navigation";
@@ -22,27 +23,55 @@ import {
 
 export default function LeaderDashboard() {
   const router = useRouter();
+  const { userDetails } = useAuth();
   
-  // In a real app, this would come from auth context
-  const leaderId = "user-2"; // Jane Smith
-  
-  // Get leader's groups and scouts
-  const allGroups = mockGroupService.getGroups();
-  const leaderGroups = allGroups.filter(group => group.leaderId === leaderId);
-  const primaryGroup = leaderGroups.length > 0 ? leaderGroups[0] : null;
-  const allScouts = primaryGroup ? mockScoutService.getScouts(undefined, primaryGroup.id) : [];
-  
-  // Calculate dashboard statistics
-  const totalScouts = allScouts.length;
-  const attendanceRate = 85; // Mock attendance rate
-  const upcomingEvents = 3; // Mock upcoming events
-  const pendingMessages = 4; // Mock pending messages
-  const activeAchievements = 12; // Mock active achievements
+  const [leaderGroups, setLeaderGroups] = useState<any[]>([]);
+  const [allScouts, setAllScouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // View state
   const [currentView, setCurrentView] = useState<"overview" | "management">("overview");
 
-  // Mock attendance data for chart
+  // Fetch leader's data
+  useEffect(() => {
+    const fetchLeaderData = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get all groups and filter by leader
+        const allGroups = await groupService.getAllGroups();
+        const groups = allGroups.filter(group => group.leader_id === userDetails.id);
+        setLeaderGroups(groups || []);
+        
+        // Get scouts for leader's groups
+        if (groups.length > 0) {
+          const primaryGroup = groups[0];
+          const scouts = await scoutService.getScoutsByGroup(primaryGroup.id);
+          setAllScouts(scouts || []);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching leader data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderData();
+  }, [userDetails]);
+  
+  const primaryGroup = leaderGroups.length > 0 ? leaderGroups[0] : null;
+  
+  // Calculate dashboard statistics
+  const totalScouts = allScouts.length;
+  const attendanceRate = 85; // Mock attendance rate - will be calculated from real data later
+  const upcomingEvents = 3; // Mock upcoming events - will be fetched from real data later
+  const pendingMessages = 4; // Mock pending messages - will be fetched from real data later
+  const activeAchievements = 12; // Mock active achievements - will be calculated from real data later
+
+  // Mock attendance data for chart - will be replaced with real data later
   const attendanceData = [
     { month: "Jan", rate: 78 },
     { month: "Feb", rate: 82 },

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { mockAuthService } from "@/lib/mock/data";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 interface SidebarProps {
   navigation: {
@@ -20,9 +20,10 @@ interface SidebarProps {
 export default function Sidebar({ navigation, userRole }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useAuth();
 
-  const handleSignOut = () => {
-    mockAuthService.logout();
+  const handleSignOut = async () => {
+    await signOut();
     router.push("/login");
   };
 

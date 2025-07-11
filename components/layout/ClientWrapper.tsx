@@ -1,31 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SocketProvider } from '@/lib/contexts/SocketContext';
-import { auth } from '@/lib/auth';
+import { AuthProvider, useAuth } from '@/lib/contexts/AuthContext';
 
-export default function ClientWrapper({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+function SocketWrapper({ children }: { children: React.ReactNode }) {
+  const { userDetails, loading } = useAuth();
   
-  useEffect(() => {
-    const fetchUser = async () => {
-      setIsLoading(true);
-      try {
-        // Get user from auth service
-        const currentUser = await auth.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error('Error loading user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchUser();
-  }, []);
-  
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -37,8 +19,18 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
   }
   
   return (
-    <SocketProvider userId={user?.id || 'anonymous'} userRole={user?.role || 'guest'}>
+    <SocketProvider userId={userDetails?.id || 'anonymous'} userRole={userDetails?.role || 'guest'}>
       {children}
     </SocketProvider>
+  );
+}
+
+export default function ClientWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <SocketWrapper>
+        {children}
+      </SocketWrapper>
+    </AuthProvider>
   );
 }

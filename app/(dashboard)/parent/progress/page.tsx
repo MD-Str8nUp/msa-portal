@@ -1,22 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { parentNavigation } from "@/components/navigation/ParentNavigation";
-import { mockScoutService } from "@/lib/mock/data";
+import { scoutService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { formatDate } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 
 export default function ParentProgressPage() {
+  const { userDetails } = useAuth();
   const [activeTab, setActiveTab] = useState("attendance");
-  
-  // In a real app, this would come from auth context/session
-  const parentId = "user-1";
+  const [myScouts, setMyScouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Get parent's scouts
-  const myScouts = mockScoutService.getScouts(parentId);
+  useEffect(() => {
+    const fetchScouts = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        const scouts = await scoutService.getScoutsByParent(userDetails.id);
+        setMyScouts(scouts || []);
+      } catch (error) {
+        console.error('Error fetching scouts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScouts();
+  }, [userDetails]);
+  
   const selectedScout = myScouts.length > 0 ? myScouts[0] : null;
   
   // Mock attendance data

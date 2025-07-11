@@ -229,9 +229,10 @@ class EnhancedMSAExcelImporter {
 
       try {
         // Flexible column matching for staff data
-        const fullName = row['Full Name*'] || row['name'] || row['Name'];
-        const staffRole = row['Role*'] || row['role'] || row['Role'];
-        const email = row['Email*'] || row['email'] || row['Email'];
+        const rowData = row as any; // Allow access to any property name
+        const fullName = row['Full Name*'] || rowData['name'] || rowData['Name'];
+        const staffRole = row['Role*'] || rowData['role'] || rowData['Role'];
+        const email = row['Email*'] || rowData['email'] || rowData['Email'];
 
         // Validate required fields
         if (!fullName || !staffRole || !email) {
@@ -409,10 +410,10 @@ export async function POST(request: NextRequest) {
       details: {
         processed: results.processed,
         errors: results.errors,
-        familiesCreated: type === 'families' ? results.families?.length || 0 : 0,
-        scoutsCreated: type === 'families' ? results.scouts?.length || 0 : 0,
-        multipleChildrenFamilies: type === 'families' ? results.multipleChildrenFamilies || 0 : 0,
-        staffCreated: type === 'staff' ? results.staff?.length || 0 : 0
+        familiesCreated: type === 'families' ? (results as any).families?.length || 0 : 0,
+        scoutsCreated: type === 'families' ? (results as any).scouts?.length || 0 : 0,
+        multipleChildrenFamilies: type === 'families' ? (results as any).multipleChildrenFamilies || 0 : 0,
+        staffCreated: type === 'staff' ? (results as any).staff?.length || 0 : 0
       }
     });
 

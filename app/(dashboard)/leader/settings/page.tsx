@@ -1,32 +1,67 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { leaderNavigation } from "@/components/navigation/LeaderNavigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
-import { mockScoutService, mockGroupService, mockUsers } from "@/lib/mock/data";
+import { scoutService, groupService, userService } from "@/lib/services/supabaseService";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import DateTimeDisplay from "@/components/ui/DateTimeDisplay";
 
 export default function LeaderSettingsPage() {
-  // Get leader's data
-  const leaderId = "user-2";
-  const groups = mockGroupService.getGroups();
-  const leaderGroups = groups.filter(group => group.leaderId === leaderId);
-  const groupId = leaderGroups.length > 0 ? leaderGroups[0].id : null;
-  const scouts = groupId ? mockScoutService.getScouts(undefined, groupId) : [];
+  const { userDetails } = useAuth();
   
-  // Get parents of scouts in leader's group
-  const parentIds = [...new Set(scouts.filter(scout => scout.parentId).map(scout => scout.parentId!))];
-  const parents = mockUsers.filter(user => parentIds.includes(user.id));
-
+  // State
+  const [groups, setGroups] = useState<any[]>([]);
+  const [scouts, setScouts] = useState<any[]>([]);
+  const [parents, setParents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   // State for member management
   const [activeTab, setActiveTab] = useState("profile");
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("parent");
+  
+  // Fetch data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userDetails) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get all groups and filter for leader's groups
+        const allGroups = await groupService.getAllGroups();
+        const leaderGroups = allGroups.filter(group => group.leader_id === userDetails.id);
+        setGroups(leaderGroups);
+        
+        // Get scouts from leader's groups
+        if (leaderGroups.length > 0) {
+          const groupId = leaderGroups[0].id;
+          const groupScouts = await scoutService.getScoutsByGroup(groupId);
+          setScouts(groupScouts);
+          
+          // Get parents of scouts
+          const parentIds = [...new Set(groupScouts.filter(scout => scout.parent_id).map(scout => scout.parent_id!))];
+          if (parentIds.length > 0) {
+            const allUsers = await userService.getAllUsers();
+            const parentUsers = allUsers.filter(user => parentIds.includes(user.id));
+            setParents(parentUsers);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching settings data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [userDetails]);
 
   // Handle inviting new member
   const handleInviteMember = () => {
