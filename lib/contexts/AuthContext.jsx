@@ -3,33 +3,34 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  is_also_parent?: boolean;
-  is_also_leader?: boolean;
-  current_view_mode?: string;
-  [key: string]: any;
-}
+/**
+ * @typedef {Object} User
+ * @property {string} id
+ * @property {string} email
+ * @property {string} name
+ * @property {string} role
+ * @property {boolean} [is_also_parent]
+ * @property {boolean} [is_also_leader]
+ * @property {string} [current_view_mode]
+ */
 
-interface AuthContextType {
-  userDetails: User | null;
-  loading: boolean;
-  viewMode: string;
-  setViewMode: (mode: string) => void;
-  signIn: (email: string, password: string) => Promise<any>;
-  signOut: () => Promise<void>;
-  updateViewMode: (newMode: string) => Promise<void>;
-  fetchUserDetails: (userId: string) => Promise<void>;
-  isAuthenticated: boolean;
-  isParent: boolean;
-  isLeader: boolean;
-  isExecutive: boolean;
-}
+/**
+ * @typedef {Object} AuthContextType
+ * @property {User|null} userDetails
+ * @property {boolean} loading
+ * @property {string} viewMode
+ * @property {(mode: string) => void} setViewMode
+ * @property {(email: string, password: string) => Promise<any>} signIn
+ * @property {() => Promise<void>} signOut
+ * @property {(newMode: string) => Promise<void>} updateViewMode
+ * @property {(userId: string) => Promise<void>} fetchUserDetails
+ * @property {boolean} isAuthenticated
+ * @property {boolean} isParent
+ * @property {boolean} isLeader
+ * @property {boolean} isExecutive
+ */
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
   const [userDetails, setUserDetails] = useState(null);

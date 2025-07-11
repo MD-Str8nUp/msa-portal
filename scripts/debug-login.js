@@ -62,11 +62,14 @@ async function debugLogin() {
           .insert([
             {
               id: authData.user.id,
-              name: 'Test User',
               email: authData.user.email,
-              password: 'hashed_password_placeholder', // In real app, this would be hashed
+              username: 'testuser',
+              first_name: 'Test',
+              last_name: 'User',
               role: 'parent',
-              current_view_mode: 'parent'
+              current_view_mode: 'parent',
+              is_also_leader: false,
+              is_also_parent: true
             }
           ])
           .select()
