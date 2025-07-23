@@ -1,1 +1,0 @@
-addTestData().catch(console.error);

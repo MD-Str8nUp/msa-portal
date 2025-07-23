@@ -122,11 +122,13 @@ export function SocketProvider({
   useEffect(() => {
     if (!userId) return;
     
-    // Fetch messages
-    fetch('/api/messages')
+    // Fetch messages with userId parameter
+    fetch(`/api/messages?userId=${userId}`)
       .then(res => res.json())
       .then(data => {
-        setMessages(data);
+        if (data.success) {
+          setMessages(data.messages || []);
+        }
       })
       .catch(err => console.error('Error fetching messages:', err));
     

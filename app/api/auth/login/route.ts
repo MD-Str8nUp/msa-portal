@@ -1,99 +1,73 @@
-import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import * as crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import { NextResponse } from 'next/server';
+import { getAdminClient } from '@/lib/supabase';
+import * as bcrypt from 'bcryptjs';
 
-// Generate a simple JWT token
-function generateToken(userId: string): string {
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-  const payload = Buffer.from(JSON.stringify({ 
-    sub: userId, 
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 // 24 hours
-  })).toString('base64');
-  
-  const signature = crypto
-    .createHmac('sha256', process.env.NEXTAUTH_SECRET || 'fallback-secret')
-    .update(`${header}.${payload}`)
-    .digest('base64');
-  
-  return `${header}.${payload}.${signature}`;
-}
-
-// Verify a token
-function verifyToken(token: string): { valid: boolean; userId?: string } {
+export async function POST(request: Request) {
   try {
-    const [header, payload, signature] = token.split('.');
-    
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.NEXTAUTH_SECRET || 'fallback-secret')
-      .update(`${header}.${payload}`)
-      .digest('base64');
-    
-    if (signature !== expectedSignature) {
-      return { valid: false };
-    }
-    
-    const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString());
-    
-    if (decodedPayload.exp < Math.floor(Date.now() / 1000)) {
-      return { valid: false };
-    }
-    
-    return { valid: true, userId: decodedPayload.sub };
-  } catch (error) {
-    return { valid: false };
-  }
-}
+    const { email, password } = await request.json();
+    const supabase = getAdminClient();
 
-export async function POST(req: NextRequest) {
-  try {
-    const { email, password } = await req.json();
-    
+    console.log('🔐 Login attempt for:', email);
+
     if (!email || !password) {
-      return Response.json({ error: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: 'Email and password are required'
+      }, { status: 400 });
     }
-    
-    // Check if user exists in database
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-    
-    if (!user) {
-      return Response.json({ error: 'Invalid email or password' }, { status: 401 });
+
+    // Find user by email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .eq('status', 'ACTIVE')
+      .single();
+
+    if (error || !user) {
+      console.log('❌ User not found or inactive:', email);
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid email or password'
+      }, { status: 401 });
     }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
     
-    // Check if password matches using bcrypt
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return Response.json({ error: 'Invalid email or password' }, { status: 401 });
+    if (!isValidPassword) {
+      console.log('❌ Invalid password for:', email);
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid email or password'
+      }, { status: 401 });
     }
-    
-    // Generate token
-    const token = generateToken(user.id);
-    
-    // Update user's online status
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        isOnline: true,
-        lastSeen: new Date()
-      }
+
+    // Update last login
+    await supabase
+      .from('users')
+      .update({ 
+        last_login: new Date().toISOString(),
+        login_count: user.login_count ? user.login_count + 1 : 1
+      })
+      .eq('id', user.id);
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    console.log('✅ Login successful for:', email);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Login successful',
+      user: userWithoutPassword
     });
-    
-    // Return user and token
-    return Response.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar
-      },
-      token
-    });
+
   } catch (error) {
-    console.error('Login error:', error);
-    return Response.json({ error: 'Authentication failed' }, { status: 500 });
+    console.error('❌ Error in login:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }

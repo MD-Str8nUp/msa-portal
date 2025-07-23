@@ -1,95 +1,74 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const groupId = searchParams.get('groupId');
+    const status = searchParams.get('status');
     const upcoming = searchParams.get('upcoming') === 'true';
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    
-    console.log('📅 Fetching events data...', { groupId, upcoming, page, limit });
+    const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Build where clause
-    const whereClause: any = {};
-    
+    console.log('📅 Fetching events with filters:', { groupId, status, upcoming, page, limit });
+
+    let query = supabase
+      .from('events')
+      .select(`
+        *,
+        group:groups(id, name, type),
+        attendance:attendance(count)
+      `);
+
+    // Apply filters
     if (groupId) {
-      whereClause.groupId = groupId;
+      query = query.eq('group_id', groupId);
     }
-    
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
     if (upcoming) {
-      whereClause.startDate = {
-        gte: new Date()
-      };
+      query = query.gte('start_date', new Date().toISOString());
     }
 
-    // Get total count
-    const totalEvents = await prisma.event.count({ where: whereClause });
+    // Apply pagination
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    // Get paginated events
-    const events = await prisma.event.findMany({
-      where: whereClause,
-      include: {
-        group: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        attendances: {
-          select: {
-            id: true,
-            status: true,
-            scout: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        }
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {
-        startDate: upcoming ? 'asc' : 'desc'
-      }
-    });
+    const { data: events, error, count } = await query
+      .range(from, to)
+      .order('start_date', { ascending: upcoming });
 
-    // Add attendance stats
-    const eventsWithStats = events.map(event => ({
-      ...event,
-      stats: {
-        totalAttendees: event.attendances.length,
-        present: event.attendances.filter(a => a.status === 'present').length,
-        absent: event.attendances.filter(a => a.status === 'absent').length,
-        excused: event.attendances.filter(a => a.status === 'excused').length
-      }
-    }));
+    if (error) {
+      console.error('❌ Error fetching events:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch events'
+      }, { status: 500 });
+    }
 
-    console.log('✅ Events retrieved:', events.length);
+    console.log('✅ Events fetched successfully');
 
     return NextResponse.json({
       success: true,
-      data: eventsWithStats,
-      pagination: {
-        page,
-        limit,
-        total: totalEvents,
-        totalPages: Math.ceil(totalEvents / limit)
-      },
-      timestamp: new Date().toISOString()
+      data: {
+        events: events || [],
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          pages: Math.ceil((count || 0) / limit)
+        }
+      }
     });
 
   } catch (error) {
-    console.error('❌ Events API error:', error);
-    
+    console.error('❌ Error in events GET:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch events data',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -97,70 +76,85 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { 
-      title, 
-      description, 
-      location, 
-      startDate, 
-      endDate, 
+    const {
+      title,
+      description,
+      startDate,
+      endDate,
+      location,
+      type = 'MEETING',
+      status = 'SCHEDULED',
       groupId,
-      requiresPermissionSlip 
+      maxAttendees,
+      requiresRsvp = false
     } = body;
-    
-    console.log('📅 Creating new event:', { title });
 
-    // Validate required fields
-    if (!title || !location || !startDate || !endDate) {
+    console.log('➕ Creating new event:', { title, type, groupId });
+
+    if (!title || !startDate || !groupId) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: title, location, startDate, endDate'
+        error: 'Missing required fields: title, startDate, groupId'
       }, { status: 400 });
     }
 
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    if (start >= end) {
+    // Verify group exists
+    const { data: group } = await supabase
+      .from('groups')
+      .select('id')
+      .eq('id', groupId)
+      .single();
+
+    if (!group) {
       return NextResponse.json({
         success: false,
-        error: 'Start date must be before end date'
+        error: 'Invalid group ID'
       }, { status: 400 });
     }
 
     // Create event
-    const newEvent = await prisma.event.create({
-      data: {
+    const { data: newEvent, error } = await supabase
+      .from('events')
+      .insert({
         title,
-        description: description || '',
+        description,
+        start_date: startDate,
+        end_date: endDate,
         location,
-        startDate: start,
-        endDate: end,
-        groupId: groupId || null,
-        requiresPermissionSlip: requiresPermissionSlip || false
-      },
-      include: {
-        group: true
-      }
-    });
+        type,
+        status,
+        group_id: groupId,
+        max_attendees: maxAttendees ? parseInt(maxAttendees) : null,
+        requires_rsvp: requiresRsvp,
+        created_at: new Date().toISOString()
+      })
+      .select(`
+        *,
+        group:groups(id, name, type)
+      `)
+      .single();
 
-    console.log('✅ New event created:', newEvent.id);
+    if (error) {
+      console.error('❌ Error creating event:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to create event'
+      }, { status: 500 });
+    }
+
+    console.log('✅ Event created successfully');
 
     return NextResponse.json({
       success: true,
-      data: newEvent,
-      message: `Event "${title}" created successfully`,
-      timestamp: new Date().toISOString()
-    });
+      message: 'Event created successfully',
+      data: newEvent
+    }, { status: 201 });
 
   } catch (error) {
-    console.error('❌ Event creation error:', error);
-    
+    console.error('❌ Error in events POST:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to create event',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -168,76 +162,74 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { 
-      id,
-      title, 
-      description, 
-      location, 
-      startDate, 
-      endDate, 
-      groupId,
-      requiresPermissionSlip 
-    } = body;
-    
-    console.log('📝 Updating event:', { id });
+    const { id, ...updateData } = body;
 
-    // Validate required fields
+    console.log('🔄 Updating event:', { id });
+
     if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required field: id'
+        error: 'Event ID is required'
       }, { status: 400 });
     }
 
-    // Build update data
-    const updateData: any = {};
-    
-    if (title) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (location) updateData.location = location;
-    if (startDate) updateData.startDate = new Date(startDate);
-    if (endDate) updateData.endDate = new Date(endDate);
-    if (groupId !== undefined) updateData.groupId = groupId;
-    if (requiresPermissionSlip !== undefined) updateData.requiresPermissionSlip = requiresPermissionSlip;
-
-    // Validate dates if both provided
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      if (start >= end) {
-        return NextResponse.json({
-          success: false,
-          error: 'Start date must be before end date'
-        }, { status: 400 });
+    // Convert camelCase to snake_case for database
+    const dbData: any = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      switch (key) {
+        case 'startDate':
+          dbData.start_date = value;
+          break;
+        case 'endDate':
+          dbData.end_date = value;
+          break;
+        case 'groupId':
+          dbData.group_id = value;
+          break;
+        case 'maxAttendees':
+          dbData.max_attendees = value ? parseInt(value as string) : null;
+          break;
+        case 'requiresRsvp':
+          dbData.requires_rsvp = value;
+          break;
+        default:
+          dbData[key] = value;
       }
     }
 
-    const updatedEvent = await prisma.event.update({
-      where: { id },
-      data: updateData,
-      include: {
-        group: true
-      }
-    });
+    dbData.updated_at = new Date().toISOString();
 
-    console.log('✅ Event updated:', updatedEvent.id);
+    const { data: updatedEvent, error } = await supabase
+      .from('events')
+      .update(dbData)
+      .eq('id', id)
+      .select(`
+        *,
+        group:groups(id, name, type)
+      `)
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating event:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to update event'
+      }, { status: 500 });
+    }
+
+    console.log('✅ Event updated successfully');
 
     return NextResponse.json({
       success: true,
-      data: updatedEvent,
-      message: `Event "${updatedEvent.title}" updated successfully`,
-      timestamp: new Date().toISOString()
+      message: 'Event updated successfully',
+      data: updatedEvent
     });
 
   } catch (error) {
-    console.error('❌ Event update error:', error);
-    
+    console.error('❌ Error in events PUT:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to update event',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -246,52 +238,42 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     console.log('🗑️ Deleting event:', { id });
 
     if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required parameter: id'
+        error: 'Event ID is required'
       }, { status: 400 });
     }
 
-    // Check if event exists
-    const event = await prisma.event.findUnique({
-      where: { id },
-      include: {
-        attendances: true
-      }
-    });
+    // Delete event (this will cascade delete attendance records)
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', id);
 
-    if (!event) {
+    if (error) {
+      console.error('❌ Error deleting event:', error);
       return NextResponse.json({
         success: false,
-        error: 'Event not found'
-      }, { status: 404 });
+        error: 'Failed to delete event'
+      }, { status: 500 });
     }
 
-    // Delete event (cascade will handle attendances)
-    await prisma.event.delete({
-      where: { id }
-    });
-
-    console.log('✅ Event deleted:', id);
+    console.log('✅ Event deleted successfully');
 
     return NextResponse.json({
       success: true,
-      message: `Event "${event.title}" deleted successfully`,
-      timestamp: new Date().toISOString()
+      message: 'Event deleted successfully'
     });
 
   } catch (error) {
-    console.error('❌ Event deletion error:', error);
-    
+    console.error('❌ Error in events DELETE:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to delete event',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

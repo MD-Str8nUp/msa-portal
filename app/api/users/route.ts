@@ -1,114 +1,78 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import { getAdminClient } from '@/lib/supabase';
+import * as bcrypt from 'bcryptjs';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const role = searchParams.get('role');
     const search = searchParams.get('search');
+    const role = searchParams.get('role');
+    const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    
-    console.log('👥 Fetching users data...', { role, search, page, limit });
+    const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Build where clause
-    const whereClause: any = {};
-    
-    if (role) {
-      if (role === 'parent') {
-        whereClause.isParent = true;
-      } else if (role === 'leader') {
-        whereClause.isLeader = true;
-      } else if (role === 'executive') {
-        whereClause.isExecutive = true;
-      } else if (role === 'support') {
-        whereClause.isSupport = true;
-      } else {
-        whereClause.role = role;
-      }
-    }
-    
+    console.log('👥 Fetching users with filters:', { search, role, status, page, limit });
+
+    const supabase = getAdminClient();
+    let query = supabase
+      .from('users')
+      .select(`
+        *,
+        user_groups:user_groups(
+          group:groups(id, name, type)
+        ),
+        scouts:scouts(count)
+      `);
+
+    // Apply filters
     if (search) {
-      whereClause.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } }
-      ];
+      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
     }
 
-    // Get total count
-    const totalUsers = await prisma.user.count({ where: whereClause });
+    if (role) {
+      query = query.eq('role', role);
+    }
 
-    // Get paginated users
-    const users = await prisma.user.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        avatar: true,
-        isParent: true,
-        isLeader: true,
-        isExecutive: true,
-        isSupport: true,
-        createdAt: true,
-        lastSeen: true,
-        isOnline: true,
-        scouts: {
-          select: {
-            id: true,
-            name: true,
-            age: true,
-            group: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        },
-        leaderGroups: {
-          select: {
-            group: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            role: true
-          }
-        }
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {
-        name: 'asc'
-      }
-    });
+    if (status) {
+      query = query.eq('status', status);
+    }
 
-    console.log('✅ Users retrieved:', users.length);
+    // Apply pagination
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data: users, error, count } = await query
+      .range(from, to)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching users:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch users'
+      }, { status: 500 });
+    }
+
+    console.log('✅ Users fetched successfully');
 
     return NextResponse.json({
       success: true,
-      data: users,
-      pagination: {
-        page,
-        limit,
-        total: totalUsers,
-        totalPages: Math.ceil(totalUsers / limit)
-      },
-      timestamp: new Date().toISOString()
+      data: {
+        users: users || [],
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          pages: Math.ceil((count || 0) / limit)
+        }
+      }
     });
 
   } catch (error) {
-    console.error('❌ Users API error:', error);
-    
+    console.error('❌ Error in users GET:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch users data',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -116,77 +80,101 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password, role, isParent, isLeader, isExecutive, isSupport } = body;
-    
-    console.log('👤 Creating new user:', { name, email, role });
+    const supabase = getAdminClient();
+    const {
+      email,
+      firstName,
+      lastName,
+      phone,
+      password,
+      role = 'PARENT',
+      status = 'ACTIVE',
+      avatar,
+      groupIds = []
+    } = body;
 
-    // Validate required fields
-    if (!name || !email || !password || !role) {
+    console.log('➕ Creating new user:', { email, firstName, lastName, role });
+
+    if (!email || !firstName || !lastName || !password) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: name, email, password, role'
+        error: 'Missing required fields: email, firstName, lastName, password'
       }, { status: 400 });
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
 
     if (existingUser) {
       return NextResponse.json({
         success: false,
         error: 'User with this email already exists'
-      }, { status: 409 });
+      }, { status: 400 });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser = await prisma.user.create({
-      data: {
-        name,
-        email: email.toLowerCase(),
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
         password: hashedPassword,
         role,
-        isParent: isParent || role === 'parent',
-        isLeader: isLeader || role === 'leader',
-        isExecutive: isExecutive || role === 'executive',
-        isSupport: isSupport || role === 'support',
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${name}`
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        avatar: true,
-        isParent: true,
-        isLeader: true,
-        isExecutive: true,
-        isSupport: true,
-        createdAt: true
-      }
-    });
+        status,
+        avatar,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    console.log('✅ New user created:', newUser.id);
+    if (error) {
+      console.error('❌ Error creating user:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to create user'
+      }, { status: 500 });
+    }
+
+    // Add user to groups if specified
+    if (groupIds.length > 0) {
+      const userGroupInserts = groupIds.map((groupId: string) => ({
+        user_id: newUser.id,
+        group_id: groupId,
+        role: 'MEMBER',
+        created_at: new Date().toISOString()
+      }));
+
+      const { error: groupError } = await supabase
+        .from('user_groups')
+        .insert(userGroupInserts);
+
+      if (groupError) {
+        console.error('❌ Error adding user to groups:', groupError);
+      }
+    }
+
+    console.log('✅ User created successfully');
 
     return NextResponse.json({
       success: true,
-      data: newUser,
-      message: `User "${name}" created successfully`,
-      timestamp: new Date().toISOString()
-    });
+      message: 'User created successfully',
+      data: newUser
+    }, { status: 201 });
 
   } catch (error) {
-    console.error('❌ User creation error:', error);
-    
+    console.error('❌ Error in users POST:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to create user',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -194,64 +182,68 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, email, password, role, isParent, isLeader, isExecutive, isSupport } = body;
-    
-    console.log('📝 Updating user:', { id });
+    const { id, password, ...updateData } = body;
+    const supabase = getAdminClient();
 
-    // Validate required fields
+    console.log('🔄 Updating user:', { id });
+
     if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required field: id'
+        error: 'User ID is required'
       }, { status: 400 });
     }
 
-    // Build update data
-    const updateData: any = {};
-    
-    if (name) updateData.name = name;
-    if (email) updateData.email = email.toLowerCase();
-    if (password) updateData.password = await bcrypt.hash(password, 10);
-    if (role) updateData.role = role;
-    if (typeof isParent === 'boolean') updateData.isParent = isParent;
-    if (typeof isLeader === 'boolean') updateData.isLeader = isLeader;
-    if (typeof isExecutive === 'boolean') updateData.isExecutive = isExecutive;
-    if (typeof isSupport === 'boolean') updateData.isSupport = isSupport;
-
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        avatar: true,
-        isParent: true,
-        isLeader: true,
-        isExecutive: true,
-        isSupport: true,
-        updatedAt: true
+    // Convert camelCase to snake_case for database
+    const dbData: any = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      switch (key) {
+        case 'firstName':
+          dbData.first_name = value;
+          break;
+        case 'lastName':
+          dbData.last_name = value;
+          break;
+        default:
+          dbData[key] = value;
       }
-    });
+    }
 
-    console.log('✅ User updated:', updatedUser.id);
+    // Hash password if provided
+    if (password) {
+      dbData.password = await bcrypt.hash(password, 10);
+    }
+
+    dbData.updated_at = new Date().toISOString();
+
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update(dbData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating user:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to update user'
+      }, { status: 500 });
+    }
+
+    console.log('✅ User updated successfully');
 
     return NextResponse.json({
       success: true,
-      data: updatedUser,
-      message: `User "${updatedUser.name}" updated successfully`,
-      timestamp: new Date().toISOString()
+      message: 'User updated successfully',
+      data: updatedUser
     });
 
   } catch (error) {
-    console.error('❌ User update error:', error);
-    
+    console.error('❌ Error in users PUT:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to update user',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -260,58 +252,57 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+    const supabase = getAdminClient();
+
     console.log('🗑️ Deleting user:', { id });
 
     if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required parameter: id'
+        error: 'User ID is required'
       }, { status: 400 });
     }
 
-    // Check if user has scouts (if parent)
-    const user = await prisma.user.findUnique({
-      where: { id },
-      include: {
-        scouts: true
-      }
-    });
+    // Check if user has scouts
+    const { data: scouts } = await supabase
+      .from('scouts')
+      .select('id')
+      .eq('parent_id', id)
+      .limit(1);
 
-    if (!user) {
+    if (scouts && scouts.length > 0) {
       return NextResponse.json({
         success: false,
-        error: 'User not found'
-      }, { status: 404 });
+        error: 'Cannot delete user with active scouts'
+      }, { status: 400 });
     }
 
-    if (user.scouts.length > 0) {
+    // Delete user (this will cascade delete user_groups)
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Error deleting user:', error);
       return NextResponse.json({
         success: false,
-        error: 'Cannot delete parent with active scouts. Please reassign scouts first.'
-      }, { status: 409 });
+        error: 'Failed to delete user'
+      }, { status: 500 });
     }
 
-    await prisma.user.delete({
-      where: { id }
-    });
-
-    console.log('✅ User deleted:', id);
+    console.log('✅ User deleted successfully');
 
     return NextResponse.json({
       success: true,
-      message: `User "${user.name}" deleted successfully`,
-      timestamp: new Date().toISOString()
+      message: 'User deleted successfully'
     });
 
   } catch (error) {
-    console.error('❌ User deletion error:', error);
-    
+    console.error('❌ Error in users DELETE:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to delete user',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

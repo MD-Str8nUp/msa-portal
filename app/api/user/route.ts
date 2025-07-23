@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Create service role client that bypasses RLS
-const supabaseServiceRole = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getAdminClient } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   try {
+    const supabase = getAdminClient();
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     
@@ -20,7 +15,7 @@ export async function GET(request: Request) {
     }
 
     // Use service role to bypass RLS and get user details
-    const { data: userData, error } = await supabaseServiceRole
+    const { data: userData, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)

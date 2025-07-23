@@ -32,7 +32,13 @@
       "Bash(npx tsc:*)",
       "Bash(npx typescript tsc:*)",
       "Bash(curl:*)",
-      "Bash(timeout 15s npm run dev)"
+      "Bash(timeout 15s npm run dev)",
+      "Bash(rd:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(npm search:*)",
+      "Bash(npx:*)",
+      "Bash(set SUPABASE_ACCESS_TOKEN=sb_secret_y14EEmWiBLgQUTzI6AMOsA_jZ2kL3fj)"
     ],
     "deny": []
   }

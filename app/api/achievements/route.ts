@@ -1,67 +1,47 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const scoutId = searchParams.get('scoutId');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const type = searchParams.get('type');
     
-    console.log('🏆 Fetching achievements data...', { scoutId, page, limit });
+    let query = supabase
+      .from('achievements')
+      .select(`
+        *,
+        scout:scouts(id, first_name, last_name)
+      `);
 
-    // Build where clause
-    const whereClause = scoutId ? { scoutId } : {};
+    if (scoutId) {
+      query = query.eq('scout_id', scoutId);
+    }
+    
+    if (type) {
+      query = query.eq('type', type);
+    }
 
-    // Get total count
-    const totalAchievements = await prisma.achievement.count({ where: whereClause });
+    const { data: achievements, error } = await query.order('date_earned', { ascending: false });
 
-    // Get paginated achievements
-    const achievements = await prisma.achievement.findMany({
-      where: whereClause,
-      include: {
-        scout: {
-          select: {
-            id: true,
-            name: true,
-            group: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        }
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {
-        dateEarned: 'desc'
-      }
-    });
-
-    console.log('✅ Achievements retrieved:', achievements.length);
+    if (error) {
+      console.error('❌ Error fetching achievements:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch achievements'
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
-      data: achievements,
-      pagination: {
-        page,
-        limit,
-        total: totalAchievements,
-        totalPages: Math.ceil(totalAchievements / limit)
-      },
-      timestamp: new Date().toISOString()
+      data: achievements || []
     });
 
   } catch (error) {
-    console.error('❌ Achievements API error:', error);
-    
+    console.error('❌ Error in achievements GET:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch achievements data',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }
@@ -69,178 +49,49 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description, scoutId, dateEarned } = body;
-    
-    console.log('🏆 Creating new achievement:', { name, scoutId });
+    const { scoutId, title, description, type = 'BADGE', dateEarned } = body;
 
-    // Validate required fields
-    if (!name || !scoutId) {
+    if (!scoutId || !title) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: name, scoutId'
+        error: 'Scout ID and title are required'
       }, { status: 400 });
     }
 
-    // Verify scout exists
-    const scout = await prisma.scout.findUnique({
-      where: { id: scoutId }
-    });
+    const { data: newAchievement, error } = await supabase
+      .from('achievements')
+      .insert({
+        scout_id: scoutId,
+        title,
+        description,
+        type,
+        date_earned: dateEarned || new Date().toISOString()
+      })
+      .select(`
+        *,
+        scout:scouts(id, first_name, last_name)
+      `)
+      .single();
 
-    if (!scout) {
+    if (error) {
+      console.error('❌ Error creating achievement:', error);
       return NextResponse.json({
         success: false,
-        error: 'Scout not found'
-      }, { status: 404 });
+        error: 'Failed to create achievement'
+      }, { status: 500 });
     }
-
-    // Create achievement
-    const newAchievement = await prisma.achievement.create({
-      data: {
-        name,
-        description: description || `Awarded ${name} badge`,
-        scoutId,
-        dateEarned: dateEarned ? new Date(dateEarned) : new Date()
-      },
-      include: {
-        scout: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
-
-    console.log('✅ New achievement created:', newAchievement.id);
 
     return NextResponse.json({
       success: true,
-      data: newAchievement,
-      message: `Achievement "${name}" awarded to ${scout.name}`,
-      timestamp: new Date().toISOString()
-    });
+      message: 'Achievement created successfully',
+      data: newAchievement
+    }, { status: 201 });
 
   } catch (error) {
-    console.error('❌ Achievement creation error:', error);
-    
+    console.error('❌ Error in achievements POST:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to create achievement',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, name, description, dateEarned } = body;
-    
-    console.log('📝 Updating achievement:', { id });
-
-    // Validate required fields
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Missing required field: id'
-      }, { status: 400 });
-    }
-
-    // Build update data
-    const updateData: any = {};
-    
-    if (name) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (dateEarned) updateData.dateEarned = new Date(dateEarned);
-
-    const updatedAchievement = await prisma.achievement.update({
-      where: { id },
-      data: updateData,
-      include: {
-        scout: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
-
-    console.log('✅ Achievement updated:', updatedAchievement.id);
-
-    return NextResponse.json({
-      success: true,
-      data: updatedAchievement,
-      message: `Achievement "${updatedAchievement.name}" updated successfully`,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('❌ Achievement update error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to update achievement',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    console.log('🗑️ Deleting achievement:', { id });
-
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Missing required parameter: id'
-      }, { status: 400 });
-    }
-
-    // Get achievement details before deletion
-    const achievement = await prisma.achievement.findUnique({
-      where: { id },
-      include: {
-        scout: {
-          select: {
-            name: true
-          }
-        }
-      }
-    });
-
-    if (!achievement) {
-      return NextResponse.json({
-        success: false,
-        error: 'Achievement not found'
-      }, { status: 404 });
-    }
-
-    await prisma.achievement.delete({
-      where: { id }
-    });
-
-    console.log('✅ Achievement deleted:', id);
-
-    return NextResponse.json({
-      success: true,
-      message: `Achievement "${achievement.name}" removed from ${achievement.scout.name}`,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('❌ Achievement deletion error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to delete achievement',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

@@ -1,88 +1,117 @@
-import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
-// Mock documents data
-const mockDocuments = [
-  {
-    id: 'doc-1',
-    title: 'Scout Handbook 2024',
-    type: 'handbook',
-    fileUrl: '/documents/handbook.pdf',
-    uploadDate: new Date('2024-01-15'),
-    uploadedBy: 'admin'
-  },
-  {
-    id: 'doc-2',
-    title: 'Safety Guidelines',
-    type: 'safety',
-    fileUrl: '/documents/safety.pdf',
-    uploadDate: new Date('2024-02-01'),
-    uploadedBy: 'admin'
-  }
-];
-
-export async function GET(req: NextRequest) {
-  // Check if database is disabled or in fallback mode
-  if (process.env.DISABLE_DATABASE === 'true') {
-    const url = new URL(req.url);
-    const type = url.searchParams.get('type');
-    
-    let documents = mockDocuments;
-    if (type) {
-      documents = mockDocuments.filter(doc => doc.type === type);
-    }
-    
-    return Response.json(documents);
-  }
-
+export async function GET(request: Request) {
   try {
-    const url = new URL(req.url);
-    const type = url.searchParams.get('type');
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
+    const scoutId = searchParams.get('scoutId');
+    const groupId = searchParams.get('groupId');
     
-    let documents;
-    
+    let query = supabase
+      .from('documents')
+      .select(`
+        *,
+        scout:scouts(id, first_name, last_name),
+        group:groups(id, name),
+        uploader:users(id, first_name, last_name)
+      `);
+
     if (type) {
-      documents = await prisma.document.findMany({
-        where: { type },
-        orderBy: { uploadDate: 'desc' }
-      });
-    } else {
-      documents = await prisma.document.findMany({
-        orderBy: { uploadDate: 'desc' }
-      });
+      query = query.eq('type', type);
     }
     
-    return Response.json(documents);
+    if (scoutId) {
+      query = query.eq('scout_id', scoutId);
+    }
+    
+    if (groupId) {
+      query = query.eq('group_id', groupId);
+    }
+
+    const { data: documents, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching documents:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch documents'
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: documents || []
+    });
+
   } catch (error) {
-    console.error('Error fetching documents, falling back to mock data:', error);
-    // Return mock data instead of error
-    const url = new URL(req.url);
-    const type = url.searchParams.get('type');
-    
-    let documents = mockDocuments;
-    if (type) {
-      documents = mockDocuments.filter(doc => doc.type === type);
-    }
-    
-    return Response.json(documents);
+    console.error('❌ Error in documents GET:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const documentData = await req.json();
-    
-    if (!documentData.title || !documentData.fileUrl || !documentData.uploadedBy) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    const body = await request.json();
+    const { 
+      title, 
+      description, 
+      type = 'GENERAL', 
+      url, 
+      scoutId, 
+      groupId, 
+      uploaderId 
+    } = body;
+
+    if (!title || !url || !uploaderId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Title, URL, and uploader ID are required'
+      }, { status: 400 });
     }
-    
-    const document = await prisma.document.create({
-      data: documentData
-    });
-    
-    return Response.json(document, { status: 201 });
+
+    const { data: newDocument, error } = await supabase
+      .from('documents')
+      .insert({
+        title,
+        description,
+        type,
+        url,
+        scout_id: scoutId,
+        group_id: groupId,
+        uploader_id: uploaderId,
+        uploaded_at: new Date().toISOString()
+      })
+      .select(`
+        *,
+        scout:scouts(id, first_name, last_name),
+        group:groups(id, name),
+        uploader:users(id, first_name, last_name)
+      `)
+      .single();
+
+    if (error) {
+      console.error('❌ Error creating document:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to create document'
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Document uploaded successfully',
+      data: newDocument
+    }, { status: 201 });
+
   } catch (error) {
-    console.error('Error creating document:', error);
-    return Response.json({ error: 'Failed to create document' }, { status: 500 });
+    console.error('❌ Error in documents POST:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }

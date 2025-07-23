@@ -1,0 +1,34 @@
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const pathname = req.nextUrl.pathname;
+
+  // Allow these paths without auth check
+  if (pathname === '/login' || pathname === '/debug' || pathname.startsWith('/api/')) {
+    return res;
+  }
+
+  // Only check auth for protected routes
+  if (pathname === '/' || pathname.startsWith('/dashboard')) {
+    const supabase = createMiddlewareClient({ req, res });
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session && pathname !== '/login') {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // If logged in and on root, redirect to dashboard
+    if (session && pathname === '/') {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+  }
+
+  return res;
+}
+
+export const config = {
+  matcher: ['/', '/dashboard/:path*', '/login', '/debug']
+};
