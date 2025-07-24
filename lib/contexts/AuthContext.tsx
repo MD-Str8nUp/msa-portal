@@ -22,10 +22,10 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
   updateViewMode: (newMode: string) => Promise<void>;
-  fetchUserDetails: (userId: string) => Promise<void>;
   isAuthenticated: boolean;
   isParent: boolean;
   isLeader: boolean;
+  isLeader1: boolean;
   isExecutive: boolean;
 }
 
@@ -36,75 +36,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('parent');
 
-  // Update the fetchUserDetails function:
-  async function fetchUserDetails(userId: string) {
-    try {
-      setLoading(true);
-      
-      // First, check if we already have a session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setUserDetails(null);
-        setLoading(false);
-        return;
-      }
-      
-      // Get user profile from users table
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user details:', error);
-        setLoading(false);
-        return;
-      }
-      
-      if (data) {
-        console.log('User details fetched:', data); // Debug log
-        
-        // Construct the name from available fields
-        const userName = data.full_name || 
-                        (data.first_name && data.last_name ? `${data.first_name} ${data.last_name}` : '') ||
-                        data.first_name || 
-                        data.email?.split('@')[0] || 
-                        'User';
-        
-        const userWithName = {
-          ...data,
-          name: userName
-        };
-        
-        setUserDetails(userWithName);
-        setViewMode(data.current_view_mode || 'parent');
-      } else {
-        console.warn('No user found with ID:', session.user.id);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserDetails:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  // Sign in function
+  // Sign in function using profile-based authentication
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      if (data.user) {
-        await fetchUserDetails(data.user.id);
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Login failed');
       }
 
-      return data;
+      // Store user session
+      localStorage.setItem('currentUser', JSON.stringify(result.user));
+      setUserDetails(result.user);
+
+      return result;
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
@@ -114,9 +68,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign out function
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
+      // Clear local session
+      localStorage.removeItem('currentUser');
       setUserDetails(null);
       setViewMode('parent');
     } catch (error) {
@@ -144,6 +97,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ...prev!,
         current_view_mode: newMode
       }));
+      
+      // Update localStorage as well
+      localStorage.setItem('currentUser', JSON.stringify({
+        ...userDetails,
+        current_view_mode: newMode
+      }));
     } catch (error) {
       console.error('Error updating view mode:', error);
     }
@@ -153,39 +112,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔄 Initializing auth...');
         
-        if (session?.user) {
-          await fetchUserDetails(session.user.id);
+        // Check for existing login session in localStorage
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            console.log('✅ Stored session found, verifying user');
+            
+            // Verify user still exists and is active
+            const response = await fetch('/api/auth/profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: user.email }),
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              if (result.success && result.user) {
+                setUserDetails(result.user);
+                console.log('✅ Session verified for:', result.user.email);
+              } else {
+                console.log('❌ Session verification failed:', result.error);
+                localStorage.removeItem('currentUser');
+                setUserDetails(null);
+              }
+            } else {
+              console.log('❌ Profile API request failed:', response.status);
+              localStorage.removeItem('currentUser');
+              setUserDetails(null);
+            }
+          } catch (parseError) {
+            console.error('❌ Invalid stored session');
+            localStorage.removeItem('currentUser');
+            setUserDetails(null);
+          }
         } else {
-          setLoading(false);
+          console.log('❌ No stored session found');
+          setUserDetails(null);
         }
+        setLoading(false);
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('❌ Error initializing auth:', error);
         setLoading(false);
       }
     };
 
-    initializeAuth();
+    // Reduce timeout to 1 second for faster recovery
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Auth initialization timeout reached, setting loading to false');
+      setLoading(false);
+      setUserDetails(null);
+    }, 1000);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchUserDetails(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          setUserDetails(null);
-          setViewMode('parent');
-          setLoading(false);
-        }
-      }
-    );
+    initializeAuth().finally(() => {
+      clearTimeout(timeoutId);
+    });
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+    // No cleanup needed for localStorage-based auth
+    return () => {};
   }, []);
 
   const value: AuthContextType = {
@@ -196,11 +182,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signOut,
     updateViewMode,
-    fetchUserDetails,
     isAuthenticated: !!userDetails,
-    isParent: userDetails?.role === 'parent' || userDetails?.is_also_parent || false,
-    isLeader: userDetails?.role === 'leader' || userDetails?.is_also_leader || false,
-    isExecutive: userDetails?.role === 'exec' || false,
+    isParent: userDetails?.role?.toLowerCase() === 'parent' || userDetails?.is_also_parent || false,
+    isLeader: userDetails?.role?.toLowerCase() === 'leader' || userDetails?.is_also_leader || false,
+    isLeader1: userDetails?.role?.toLowerCase() === 'leader1' || false,
+    isExecutive: userDetails?.role?.toLowerCase() === 'executive' || userDetails?.role?.toLowerCase() === 'admin' || false,
   };
 
   return (

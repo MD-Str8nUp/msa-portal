@@ -7,6 +7,7 @@ import React, { useState, useCallback } from 'react';
 import { Upload, Download, CheckCircle, AlertTriangle, XCircle, FileText, Users, UserCheck, Info } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { msaTemplateGenerator } from '@/lib/services/excel-template-generator';
+import ExcelExportDialog from './ExcelExportDialog';
 
 interface ValidationResult {
   errors: string[];
@@ -27,6 +28,7 @@ export default function MSAAdminUploadInterface() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'validate' | 'confirm' | 'success'>('upload');
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Simplified validation - only flag truly critical issues
   const validateExcelData = (data: any[], type: 'families' | 'staff'): ValidationResult => {
@@ -364,6 +366,26 @@ export default function MSAAdminUploadInterface() {
               </div>
             </div>
 
+            {/* Excel Export Section */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-emerald-800 mb-4 flex items-center">
+                <Download className="w-5 h-5 mr-2" />
+                Export Data to Excel
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Export existing MSA data to Excel format for analysis, backup, or external reporting:
+              </p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowExportDialog(true)}
+                  className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Export Data to Excel
+                </button>
+              </div>
+            </div>
+
             {/* File Upload */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-emerald-800 mb-4 flex items-center">
@@ -599,6 +621,12 @@ export default function MSAAdminUploadInterface() {
           </div>
         )}
       </div>
+      
+      {/* Excel Export Dialog */}
+      <ExcelExportDialog 
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+      />
     </div>
   );
 }

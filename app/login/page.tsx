@@ -14,22 +14,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Quick session check without blocking UI
-    const checkExistingSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // User is already logged in, redirect immediately
-          window.location.href = '/dashboard';
-        }
-      } catch (err) {
-        console.error('Session check error:', err);
-        // Continue to login form
-      }
-    };
-    
-    checkExistingSession();
+    // Don't check for existing session - let user manually navigate if needed
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -46,31 +31,39 @@ export default function LoginPage() {
     try {
       console.log('Attempting login for:', email);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
+      // Use our profile-based authentication API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+        }),
       });
 
-      if (error) {
-        console.error('Login error:', error);
-        setError(error.message || 'Login failed');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        console.error('Login error:', result.error);
+        setError(result.error || 'Login failed');
         setLoading(false);
         return;
       }
 
-      if (data.user) {
-        console.log('Login successful for:', data.user.email);
+      if (result.user) {
+        console.log('Login successful for:', result.user.email);
         
-        // Verify the session was created
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session) {
-          console.log('Session verified, redirecting to dashboard');
-          // Force redirect with window.location for maximum reliability
-          window.location.href = '/dashboard';
-        } else {
-          setError('Session creation failed. Please try again.');
-          setLoading(false);
-        }
+        // Store user session locally
+        localStorage.setItem('currentUser', JSON.stringify(result.user));
+        
+        console.log('Session stored, redirecting to dashboard');
+        // Force redirect with window.location for maximum reliability  
+        window.location.href = '/';
+      } else {
+        setError('Login response invalid. Please try again.');
+        setLoading(false);
       }
     } catch (err) {
       console.error('Unexpected login error:', err);
@@ -79,26 +72,15 @@ export default function LoginPage() {
     }
   };
 
-  const fillTestCredentials = () => {
-    setEmail('test@test.com');
-    setPassword('test123');
-    setError('');
-  };
 
-  const fillAdminCredentials = () => {
-    setEmail('admin@msaportal.com');
-    setPassword('MSA@Admin2025!');
-    setError('');
-  };
-
-  // Show minimal loading state while mounting
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  // Always render the login form immediately - don't wait for mounting
+  // if (!mounted) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -177,24 +159,6 @@ export default function LoginPage() {
               )}
             </button>
             
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={fillTestCredentials}
-                disabled={loading}
-                className="flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                Test User
-              </button>
-              <button
-                type="button"
-                onClick={fillAdminCredentials}
-                disabled={loading}
-                className="flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                Admin User
-              </button>
-            </div>
           </div>
         </form>
         

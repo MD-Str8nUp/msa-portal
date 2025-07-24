@@ -22,9 +22,9 @@ export const userService = {
 
   async getAllUsers() {
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
-      .order('first_name');
+      .order('name');
 
     if (error) {
       console.error('Error fetching users:', error);

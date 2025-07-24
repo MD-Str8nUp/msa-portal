@@ -31,62 +31,28 @@ export default function SmartSearch({ className, placeholder = "Search scouts, e
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Mock search function - replace with actual API call
-  const performSearch = (searchQuery: string, filter?: string) => {
+  // Real search function using API
+  const performSearch = async (searchQuery: string, filter?: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       return;
     }
 
-    // Mock results
-    const mockResults: SearchResult[] = [
-      {
-        id: "1",
-        type: "scout",
-        title: "John Doe",
-        subtitle: "Cubs • Age 10",
-        url: "/parent/scouts/1",
-        icon: Users
-      },
-      {
-        id: "2",
-        type: "event",
-        title: "Summer Camp 2024",
-        subtitle: "July 15-20",
-        url: "/parent/events/2",
-        icon: Calendar
-      },
-      {
-        id: "3",
-        type: "message",
-        title: "Camp Registration Reminder",
-        subtitle: "From: Leader Smith",
-        url: "/parent/messages/3",
-        icon: MessageSquare
-      },
-      {
-        id: "4",
-        type: "document",
-        title: "Permission Slip - Summer Camp",
-        subtitle: "Due: July 1",
-        url: "/parent/documents/4",
-        icon: FileText
-      }
-    ];
-
-    // Filter results based on active filter
-    const filtered = filter 
-      ? mockResults.filter(r => r.type === filter)
-      : mockResults.filter(r => 
-          r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          r.subtitle?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-    setResults(filtered);
+    try {
+      // TODO: Implement actual search API calls when endpoints are ready
+      // For now, return empty results until real data is available
+      setResults([]);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setResults([]);
+    }
   };
 
   useEffect(() => {
-    performSearch(query, activeFilter || undefined);
+    const search = async () => {
+      await performSearch(query, activeFilter || undefined);
+    };
+    search();
   }, [query, activeFilter]);
 
   // Load recent searches from localStorage

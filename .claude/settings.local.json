@@ -38,7 +38,18 @@
       "Bash(head:*)",
       "Bash(npm search:*)",
       "Bash(npx:*)",
-      "Bash(set SUPABASE_ACCESS_TOKEN=sb_secret_y14EEmWiBLgQUTzI6AMOsA_jZ2kL3fj)"
+      "Bash(set SUPABASE_ACCESS_TOKEN=%SUPABASE_ACCESS_TOKEN%)",
+      "Bash(where:*)",
+      "Bash(npm run lint)",
+      "Bash(dir:*)",
+      "Bash(type:*)",
+      "Bash(powershell:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(taskkill:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run mcp:start:*)",
+      "Bash(timeout 15 npm run dev)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

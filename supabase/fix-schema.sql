@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   last_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('ADMIN', 'LEADER', 'PARENT', 'SCOUT')),
+  role TEXT NOT NULL CHECK (role IN ('ADMIN', 'LEADER', 'LEADER1', 'PARENT', 'SCOUT')),
   status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
   phone TEXT,
   avatar TEXT,

@@ -162,36 +162,72 @@ export default function DebugPage() {
   };
 
   const testLogin = async () => {
-    addTestResult('🔄 Testing login...');
+    addTestResult('🔄 Testing custom auth login...');
+    addTestResult(`🌐 Current host: ${window.location.host}`);
+    addTestResult(`🔗 API URL: ${window.location.origin}/api/auth/login`);
+    
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'test@example.com',
-        password: 'password123',
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'admin@msaportal.com',
+          password: 'MSA@2025!'
+        })
       });
       
-      if (error) {
-        addTestResult(`❌ Test login failed: ${error.message}`);
+      const result = await response.json();
+      addTestResult(`📊 Response status: ${response.status}`);
+      addTestResult(`📋 Response: ${JSON.stringify(result, null, 2)}`);
+      
+      if (result.success) {
+        addTestResult(`✅ Custom auth login successful: ${result.user.email}`);
+        localStorage.setItem('currentUser', JSON.stringify(result.user));
+        addTestResult('💾 User stored in localStorage');
       } else {
-        addTestResult(`✅ Test login successful: ${data.user?.email}`);
-        // Refresh diagnostics
-        setTimeout(runDiagnostics, 1000);
+        addTestResult(`❌ Custom auth login failed: ${result.error}`);
       }
     } catch (err) {
-      addTestResult(`❌ Test login error: ${err}`);
+      addTestResult(`❌ Custom auth login error: ${err}`);
+    }
+  };
+
+  const testRegularUserLogin = async () => {
+    addTestResult('🔄 Testing regular parent login...');
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'saharose_00@hotmail.com',
+          password: 'MSA@2025!'
+        })
+      });
+      
+      const result = await response.json();
+      addTestResult(`📊 Parent login status: ${response.status}`);
+      addTestResult(`📋 Parent response: ${JSON.stringify(result, null, 2)}`);
+      
+      if (result.success) {
+        addTestResult(`✅ Parent login successful: ${result.user.email}`);
+        localStorage.setItem('currentUser', JSON.stringify(result.user));
+        addTestResult('💾 Parent user stored in localStorage');
+      } else {
+        addTestResult(`❌ Parent login failed: ${result.error}`);
+      }
+    } catch (err) {
+      addTestResult(`❌ Parent login error: ${err}`);
     }
   };
 
   const testLogout = async () => {
-    addTestResult('🔄 Testing logout...');
+    addTestResult('🔄 Testing custom auth logout...');
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        addTestResult(`❌ Logout failed: ${error.message}`);
-      } else {
-        addTestResult('✅ Logout successful');
-        // Refresh diagnostics
-        setTimeout(runDiagnostics, 1000);
-      }
+      localStorage.removeItem('currentUser');
+      addTestResult('✅ Custom auth logout successful (localStorage cleared)');
+      // Refresh diagnostics
+      setTimeout(runDiagnostics, 1000);
     } catch (err) {
       addTestResult(`❌ Logout error: ${err}`);
     }
@@ -311,16 +347,20 @@ export default function DebugPage() {
                   onClick={testLogin}
                   className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
                 >
-                  Test Login
+                  Test Admin Login
                 </button>
-                {debugInfo?.auth.isLoggedIn && (
-                  <button
-                    onClick={testLogout}
-                    className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
-                  >
-                    Logout
-                  </button>
-                )}
+                <button
+                  onClick={testRegularUserLogin}
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                >
+                  Test Parent Login
+                </button>
+                <button
+                  onClick={testLogout}
+                  className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                >
+                  Clear Session
+                </button>
               </div>
             </div>
           </div>

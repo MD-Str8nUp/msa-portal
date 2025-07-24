@@ -2,10 +2,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "parent" | "leader" | "executive";
+  role: "parent" | "leader" | "leader1" | "executive";
   avatar?: string;
   childrenIds?: string[]; // For parent users
   assignedGroupIds?: string[]; // For leader users
+  currentViewMode?: "leader" | "parent"; // For leader1 users
 }
 
 export interface Parent {

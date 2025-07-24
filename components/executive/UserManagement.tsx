@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -38,95 +38,29 @@ const UserManagement: React.FC<UserManagementProps> = ({ className = "" }) => {
   const [bulkAction, setBulkAction] = useState<string>('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // Mock comprehensive user data
-  const users: User[] = [
-    {
-      id: 'user-1',
-      name: 'Ahmad Ali',
-      email: 'ahmad.ali@email.com',
-      role: 'scout',
-      academy: 'Main Academy',
-      groupId: 'group-1',
-      groupName: 'Eagle Scouts',
-      phone: '+1234567890',
-      joinDate: '2023-06-15',
-      lastActive: '2025-01-18',
-      status: 'active',
-      permissions: ['view_profile', 'join_events'],
-      age: 12,
-      parentId: 'user-5'
-    },
-    {
-      id: 'user-2',
-      name: 'Fatima Hassan',
-      email: 'fatima.hassan@email.com',
-      role: 'leader',
-      academy: 'North Branch',
-      groupId: 'group-2',
-      groupName: 'Wolf Pack',
-      phone: '+1234567891',
-      joinDate: '2022-03-10',
-      lastActive: '2025-01-19',
-      status: 'active',
-      permissions: ['manage_group', 'view_reports', 'send_messages'],
-      children: ['user-8', 'user-9']
-    },
-    {
-      id: 'user-3',
-      name: 'Omar Ahmed',
-      email: 'omar.ahmed@email.com',
-      role: 'parent',
-      academy: 'South Branch',
-      phone: '+1234567892',
-      joinDate: '2023-01-20',
-      lastActive: '2025-01-17',
-      status: 'active',
-      permissions: ['view_child_progress', 'pay_fees'],
-      children: ['user-1', 'user-10']
-    },
-    {
-      id: 'user-4',
-      name: 'Aisha Khan',
-      email: 'aisha.khan@email.com',
-      role: 'executive',
-      academy: 'Main Academy',
-      phone: '+1234567893',
-      joinDate: '2021-08-05',
-      lastActive: '2025-01-19',
-      status: 'active',
-      permissions: ['full_access', 'manage_finances', 'admin_control']
-    },
-    {
-      id: 'user-5',
-      name: 'Yusuf Ibrahim',
-      email: 'yusuf.ibrahim@email.com',
-      role: 'leader',
-      academy: 'Main Academy',
-      groupId: 'group-3',
-      groupName: 'Trailblazers',
-      phone: '+1234567894',
-      joinDate: '2022-09-15',
-      lastActive: '2025-01-18',
-      status: 'active',
-      permissions: ['manage_group', 'view_reports', 'send_messages']
-    },
-    {
-      id: 'user-6',
-      name: 'Maryam Said',
-      email: 'maryam.said@email.com',
-      role: 'scout',
-      academy: 'North Branch',
-      groupId: 'group-2',
-      groupName: 'Wolf Pack',
-      phone: '+1234567895',
-      joinDate: '2023-11-08',
-      lastActive: '2025-01-16',
-      status: 'active',
-      permissions: ['view_profile', 'join_events'],
-      age: 11,
-      parentId: 'user-7'
-    }
-  ];
+  // Real user data - TODO: Replace with actual API call
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load users from API
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        // TODO: Implement real user API call
+        // const response = await userService.getUsers();
+        // setUsers(response.data || []);
+        setUsers([]); // Empty until real API is implemented
+      } catch (error) {
+        console.error('Failed to load users:', error);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   // Filter users based on search and filters
   const filteredUsers = users.filter(user => {
