@@ -49,7 +49,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(npm run mcp:start:*)",
       "Bash(timeout 15 npm run dev)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(mcp list-tools:*)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)"
     ],
     "deny": []
   }

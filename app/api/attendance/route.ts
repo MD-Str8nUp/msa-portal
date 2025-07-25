@@ -6,6 +6,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const scoutId = searchParams.get('scoutId');
     const eventId = searchParams.get('eventId');
+    const date = searchParams.get('date');
+    const groupId = searchParams.get('groupId');
     
     let query = supabase
       .from('attendance')
@@ -21,6 +23,14 @@ export async function GET(request: Request) {
     
     if (eventId) {
       query = query.eq('event_id', eventId);
+    }
+
+    if (date) {
+      query = query.eq('date', date);
+    }
+
+    if (groupId) {
+      query = query.eq('group_id', groupId);
     }
 
     const { data: attendance, error } = await query.order('created_at', { ascending: false });
@@ -50,44 +60,98 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { scoutId, eventId, status = 'PRESENT', notes } = body;
+    const { 
+      scout_id, 
+      scoutId, 
+      event_id, 
+      eventId, 
+      status = 'PRESENT', 
+      notes, 
+      date,
+      group_id,
+      groupId,
+      leader_id,
+      leaderId 
+    } = body;
 
-    if (!scoutId || !eventId) {
+    // Support both snake_case and camelCase
+    const finalScoutId = scout_id || scoutId;
+    const finalEventId = event_id || eventId;
+    const finalGroupId = group_id || groupId;
+    const finalLeaderId = leader_id || leaderId;
+    const finalDate = date || new Date().toISOString().split('T')[0];
+
+    if (!finalScoutId) {
       return NextResponse.json({
         success: false,
-        error: 'Scout ID and Event ID are required'
+        error: 'Scout ID is required'
       }, { status: 400 });
     }
 
-    const { data: newAttendance, error } = await supabase
+    // Check if attendance record already exists for this scout and date
+    const { data: existingRecord } = await supabase
       .from('attendance')
-      .insert({
-        scout_id: scoutId,
-        event_id: eventId,
-        status,
-        notes,
-        date: new Date().toISOString()
-      })
-      .select(`
-        *,
-        scout:scouts(id, first_name, last_name),
-        event:events(id, title, start_date)
-      `)
-      .single();
+      .select('id')
+      .eq('scout_id', finalScoutId)
+      .eq('date', finalDate)
+      .maybeSingle();
 
-    if (error) {
-      console.error('❌ Error creating attendance:', error);
+    let result;
+    if (existingRecord) {
+      // Update existing record
+      const { data: updatedAttendance, error } = await supabase
+        .from('attendance')
+        .update({
+          status,
+          notes,
+          group_id: finalGroupId,
+          leader_id: finalLeaderId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingRecord.id)
+        .select(`
+          *,
+          scout:scouts(id, first_name, last_name)
+        `)
+        .single();
+      
+      result = { data: updatedAttendance, error };
+    } else {
+      // Create new record
+      const { data: newAttendance, error } = await supabase
+        .from('attendance')
+        .insert({
+          scout_id: finalScoutId,
+          event_id: finalEventId,
+          status,
+          notes,
+          date: finalDate,
+          group_id: finalGroupId,
+          leader_id: finalLeaderId,
+          created_at: new Date().toISOString()
+        })
+        .select(`
+          *,
+          scout:scouts(id, first_name, last_name)
+        `)
+        .single();
+      
+      result = { data: newAttendance, error };
+    }
+
+    if (result.error) {
+      console.error('❌ Error saving attendance:', result.error);
       return NextResponse.json({
         success: false,
-        error: 'Failed to create attendance record'
+        error: 'Failed to save attendance record'
       }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Attendance recorded successfully',
-      data: newAttendance
-    }, { status: 201 });
+      message: existingRecord ? 'Attendance updated successfully' : 'Attendance recorded successfully',
+      data: result.data
+    }, { status: existingRecord ? 200 : 201 });
 
   } catch (error) {
     console.error('❌ Error in attendance POST:', error);

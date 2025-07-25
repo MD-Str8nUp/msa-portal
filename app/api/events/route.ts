@@ -5,24 +5,29 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const groupId = searchParams.get('groupId');
+    const groupIds = searchParams.get('groupIds');
     const status = searchParams.get('status');
     const upcoming = searchParams.get('upcoming') === 'true';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    console.log('📅 Fetching events with filters:', { groupId, status, upcoming, page, limit });
+    console.log('📅 Fetching events with filters:', { groupId, groupIds, status, upcoming, page, limit });
 
     let query = supabase
       .from('events')
       .select(`
         *,
-        group:groups(id, name, type),
-        attendance:attendance(count)
+        group:scout_groups(id, name, division)
       `);
 
     // Apply filters
     if (groupId) {
       query = query.eq('group_id', groupId);
+    } else if (groupIds) {
+      const groupIdArray = groupIds.split(',').filter(id => id.trim());
+      if (groupIdArray.length > 0) {
+        query = query.in('group_id', groupIdArray);
+      }
     }
 
     if (status) {
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
 
     // Verify group exists
     const { data: group } = await supabase
-      .from('groups')
+      .from('scout_groups')
       .select('id')
       .eq('id', groupId)
       .single();
@@ -130,7 +135,7 @@ export async function POST(request: Request) {
       })
       .select(`
         *,
-        group:groups(id, name, type)
+        group:scout_groups(id, name, division)
       `)
       .single();
 
@@ -205,7 +210,7 @@ export async function PUT(request: Request) {
       .eq('id', id)
       .select(`
         *,
-        group:groups(id, name, type)
+        group:scout_groups(id, name, division)
       `)
       .single();
 

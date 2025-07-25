@@ -18,6 +18,15 @@ interface Scout {
   email: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  division: string;
+  status: string;
+  leader_id: string;
+  scouts: Scout[];
+}
+
 interface Event {
   id: string;
   title: string;
@@ -31,6 +40,7 @@ interface Event {
 
 export default function LeaderDashboardPage() {
   const { userDetails, loading: authLoading, signOut } = useAuth();
+  const [groups, setGroups] = useState<Group[]>([]);
   const [scouts, setScouts] = useState<Scout[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +63,24 @@ export default function LeaderDashboardPage() {
       setLoading(true);
       setError('');
 
-      // Load all scouts for leaders
-      const scoutsRes = await fetch('/api/scouts');
-      if (scoutsRes.ok) {
-        const scoutsData = await scoutsRes.json();
-        setScouts(scoutsData.data || []);
+      // Load leader's groups with scouts - filter server-side by leader ID
+      const groupsRes = await fetch(`/api/groups?leaderId=${userDetails?.id}&limit=100`);
+      if (groupsRes.ok) {
+        const groupsData = await groupsRes.json();
+        const leaderGroups = groupsData.data?.groups || [];
+        
+        setGroups(leaderGroups);
+        
+        // Extract all scouts from leader's groups
+        const allScouts = leaderGroups.flatMap((group: Group) => 
+          (group.scouts || []).map((scout: Scout) => ({
+            ...scout,
+            group: { name: group.name }
+          }))
+        );
+        setScouts(allScouts);
       } else {
-        console.warn('Could not load scouts data');
+        console.warn('Could not load groups data');
       }
 
       // Load upcoming events
@@ -139,7 +160,25 @@ export default function LeaderDashboardPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <span className="text-indigo-600 font-bold">🏕️</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">My Groups</dt>
+                    <dd className="text-lg font-medium text-gray-900">{groups.length}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
@@ -150,7 +189,7 @@ export default function LeaderDashboardPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Scouts</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">My Scouts</dt>
                     <dd className="text-lg font-medium text-gray-900">{scouts.length}</dd>
                   </dl>
                 </div>
@@ -197,11 +236,57 @@ export default function LeaderDashboardPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Groups Section */}
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                My Groups ({groups.length})
+              </h3>
+              
+              {groups.length > 0 ? (
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {groups.map((group) => (
+                    <div key={group.id} className="border border-gray-200 rounded-lg p-4 bg-indigo-50">
+                      <h4 className="font-medium text-gray-900 mb-2">{group.name}</h4>
+                      <div className="text-sm text-gray-600 mb-2">
+                        <p><strong>Division:</strong> {group.division}</p>
+                        <p><strong>Status:</strong> {group.status}</p>
+                        <p><strong>Scouts:</strong> {group.scouts?.length || 0}</p>
+                      </div>
+                      {group.scouts && group.scouts.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-500 mb-1">Scouts in this group:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {group.scouts.slice(0, 5).map((scout) => (
+                              <span key={scout.id} className="inline-block bg-gray-100 text-xs px-2 py-1 rounded">
+                                {scout.first_name} {scout.last_name}
+                              </span>
+                            ))}
+                            {group.scouts.length > 5 && (
+                              <span className="inline-block bg-gray-200 text-xs px-2 py-1 rounded">
+                                +{group.scouts.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No groups assigned.</p>
+                  <p className="text-sm text-gray-400">Groups assigned to you will appear here.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Scouts Section */}
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                All Scouts ({scouts.length})
+                My Scouts ({scouts.length})
               </h3>
               
               {scouts.length > 0 ? (
@@ -212,16 +297,9 @@ export default function LeaderDashboardPage() {
                         {scout.full_name || `${scout.first_name} ${scout.last_name}`}
                       </h4>
                       <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                        <p><strong>Division:</strong> {scout.division}</p>
                         <p><strong>Age:</strong> {scout.age} years</p>
-                        <p><strong>School:</strong> {scout.school}</p>
-                        <p><strong>Email:</strong> {scout.email}</p>
+                        <p><strong>Group:</strong> {scout.group?.name}</p>
                       </div>
-                      {scout.group && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          <strong>Group:</strong> {scout.group.name}
-                        </p>
-                      )}
                     </div>
                   ))}
                   {scouts.length > 10 && (
@@ -232,8 +310,8 @@ export default function LeaderDashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No scouts found.</p>
-                  <p className="text-sm text-gray-400">Scouts data will appear here when available.</p>
+                  <p className="text-gray-500 mb-4">No scouts assigned to your groups.</p>
+                  <p className="text-sm text-gray-400">Scouts from your groups will appear here.</p>
                 </div>
               )}
             </div>

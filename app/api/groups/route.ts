@@ -7,16 +7,20 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const type = searchParams.get('type');
     const status = searchParams.get('status');
+    const leaderId = searchParams.get('leaderId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    console.log('Groups API: Fetching groups with filters:', { search, type, status, page, limit });
+    console.log('Groups API: Fetching groups with filters:', { search, type, status, leaderId, page, limit });
 
     const supabase = getAdminClient();
-    // Try basic groups query first
+    // Query scout_groups table with scouts data
     let query = supabase
-      .from('groups')
-      .select('*');
+      .from('scout_groups')
+      .select(`
+        *,
+        scouts(id, first_name, last_name, age, gender)
+      `);
 
     // Apply filters
     if (search) {
@@ -24,11 +28,15 @@ export async function GET(request: Request) {
     }
 
     if (type) {
-      query = query.eq('type', type);
+      query = query.eq('division', type);
     }
 
     if (status) {
       query = query.eq('status', status);
+    }
+
+    if (leaderId) {
+      query = query.eq('leader_id', leaderId);
     }
 
     // Apply pagination
@@ -96,11 +104,11 @@ export async function POST(request: Request) {
 
     // Create group
     const { data: newGroup, error } = await supabase
-      .from('groups')
+      .from('scout_groups')
       .insert({
         name,
         description,
-        type,
+        division: type,
         status,
         location,
         meeting_time: meetingTime,

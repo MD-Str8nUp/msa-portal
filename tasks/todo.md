@@ -1,461 +1,258 @@
-# MSA Portal Database Fix Project
+# Create MSA Portal Database Schema and Leaders Data
 
 ## Project Overview
-Fix all database structure issues causing 500 errors in the MSA Portal. The main problems are:
-1. Missing proper table structures that match API expectations  
-2. Inconsistent column names between database schema and API code
-3. Missing foreign key relationships
-4. Incorrect role definitions
-5. Missing tables for scout groups, messages, and other features
+Create the missing database schema and insert all groups and leaders data into the Supabase database using MCP. This includes creating missing tables, 3 team leaders with LEADER1 role, 25+ group leaders with LEADER role, and 17 specific scout groups with proper assignments.
 
-## Current Issues Identified
+## Data Requirements
+- **17 Scout Groups Total**: 5 Joeys groups, 8 Cubs groups, 4 Scouts groups (specific age/gender divisions)
+- **3 Team Leaders**: Hawraa El Husseini (Joeys), Abbas Ramadan (Cubs), Sayed Mohamed (Scouts) - LEADER1 role
+- **25+ Group Leaders**: Individual group leaders - LEADER role
+- **Email Format**: firstname.lastname@msaportal.com
+- **Temporary Password**: leader123 (hashed with bcrypt)
 
-### API Endpoint Errors (500 Status)
-- **Groups API**: Expects `groups` table with specific column structure
-- **Messages API**: Expects `messages` table with sender_id/recipient_id columns
-- **Scouts API**: Expects `scouts` table with proper parent/group relationships
-- **Missing Tables**: scout_groups, proper children table structure
+## Todo List
 
-### Schema Inconsistencies
-- **Users Table**: API expects `first_name`, `last_name` but some schemas use `name`
-- **Scouts Table**: Missing columns like `date_of_birth`, `gender`, `uniform_size_top/bottom`, `allergies_medical`
-- **Groups Table**: Missing columns like `status`, `location`, `meeting_time`, `capacity`
-- **Messages Table**: Missing columns like `type`, `priority`, `status`
+### Phase 1: Database Schema Creation ✅ COMPLETED
+- [x] **Test MCP connection to Supabase** - ✅ Connection verified
+- [x] **Analyze current database schema** - ✅ Analysis complete
+- [x] **Identify missing tables/fields** - ✅ Missing user_groups table identified
 
-### Role System Issues
-- **Roles**: API expects PARENT, LEADER, LEADER1, EXECUTIVE but schema has different roles
-- **4-Account System**: Need proper role hierarchy and permissions
+### Phase 2: Create Missing Database Tables
+- [ ] **Create user_groups table** - For leader-group relationship assignments
+- [ ] **Verify users table structure** - Ensure proper role support (PARENT, LEADER, LEADER1, EXECUTIVE)
+- [ ] **Verify groups table structure** - Ensure proper scout group fields
+- [ ] **Add any missing indexes** - For optimal query performance
 
-## Todo List - Database Structure Fix
+### Phase 3: Create Team Leaders (LEADER1 Role)
+- [ ] **Create Hawraa El Husseini** - Joeys Team Leader with LEADER1 role
+- [ ] **Create Abbas Ramadan** - Cubs Team Leader with LEADER1 role
+- [ ] **Create Sayed Mohamed** - Scouts Team Leader with LEADER1 role
+- [ ] **Set default view mode** - current_view_mode = 'leader'
 
-### Phase 1: Data Analysis & Preparation (Priority 1)
-- [ ] **Analyze CSV data completely** - Review all 79 records for data quality issues
-- [ ] **Identify unique parents** - Extract unique parent records from CSV (handle duplicates)
-- [ ] **Extract children data** - Parse all children information and link to parents
-- [ ] **Identify staff members** - Extract any staff/leader information from data
-- [ ] **Create data mapping** - Map CSV fields to database schema
-- [ ] **Handle missing data** - Define strategy for incomplete records
+### Phase 4: Create Specific Scout Groups (17 Total)
+- [ ] **Create 5 Joeys Groups**:
+  - Joeys A (5yrs)
+  - Joeys B (6yrs) - 1
+  - Joeys B (6yrs) - 2
+  - Joeys C Girls (7yrs)
+  - Joeys C Boys (7yrs)
+- [ ] **Create 8 Cubs Groups**:
+  - Cubs A Girls (8-9)
+  - Cubs A Boys (8)
+  - Cubs B Girls (10)
+  - Cubs B Boys (9)
+  - Cubs C Girls (11)
+  - Cubs C Boys (10)
+  - Cubs Boys D (11)
+  - Cubs Boys D2 (11)
+- [ ] **Create 4 Scouts Groups**:
+  - Scouts A Girls
+  - Scouts A Boys (12)
+  - Scouts B Boys (13)
+  - Scout Boys C (14-15)
 
-### Phase 2: Database Preparation (Priority 1)
-- [ ] **Verify MCP Supabase connection** - Test connection to Supabase via MCP
-- [ ] **Check existing users** - Query current users to avoid conflicts
-- [ ] **Create missing groups** - Ensure Joeys, Cubs, Scouts groups exist
-- [ ] **Set up proper roles** - Verify PARENT, LEADER roles are configured
-- [ ] **Test import API** - Verify `/api/import-excel/route.ts` functionality
+### Phase 5: Create Group Leaders (LEADER Role)
+- [ ] **Create Joeys Leaders (5 groups, 10 leaders)**:
+  - Ghofran Batoul, Rabii (Joeys A)
+  - Rehab Kassem, Jana Boussi (Joeys B-1)
+  - Fatima G, Ayah Merhi (Joeys B-2)
+  - Hodah Ayache, Aminah Reslan (Joeys C Girls)
+  - Ali Makki, Hassan Hijazi (Joeys C Boys)
+- [ ] **Create Cubs Leaders (8 groups, 16 leaders)**:
+  - Fay Jaafar, Renee Reda (Cubs A Girls)
+  - Taha Dirani, Mohamed Wehbi (Cubs A Boys)
+  - Zeinab Sleiman, Ghadeer Haidar (Cubs B Girls)
+  - Hussein Ramadan, Mohamed Allouch (Cubs B Boys)
+  - Fatima Issa, Aminah Bahmad (Cubs C Girls)
+  - Hassan Sleiman, Hussein M.A (Cubs C Boys)
+  - Mohamed Kobeissi, Haidar Alawie (Cubs Boys D)
+  - Mohamad Ali, Hijazi (Cubs Boys D2)
+- [ ] **Create Scouts Leaders (4 groups, 5 leaders)**:
+  - Samar Droubi, Mariam Droubi (Scouts A Girls)
+  - Hussein Darwich, M.A Droubi (Scouts A Boys)
+  - Ali Chour (Scouts B Boys)
+  - Hamzah Bibawi (Scout Boys C)
 
-### Phase 3: Parent Data Import (Priority 2)
-- [ ] **Process unique parent records** - Create parent profiles with PARENT role
-- [ ] **Set temp passwords** - Use 'temppass123' hashed for all new parents
-- [ ] **Handle duplicate emails** - Merge or update existing parent records
-- [ ] **Validate parent data integrity** - Ensure all required fields populated
-- [ ] **Create parent-address mapping** - Store complete address information
+### Phase 6: Create Leader-Group Assignments
+- [ ] **Assign team leaders to oversee divisions** - Link LEADER1 users to their cohorts
+- [ ] **Assign group leaders to specific groups** - Link each LEADER to their assigned groups
+- [ ] **Set primary leader for each group** - Update groups.leader_id field
+- [ ] **Verify all assignments** - Ensure no groups are unassigned
 
-### Phase 4: Children/Scout Data Import (Priority 2)  
-- [ ] **Process children records** - Create scout profiles linked to parents
-- [ ] **Assign to proper groups** - Place scouts in Joeys/Cubs/Scouts based on age
-- [ ] **Handle uniform sizes** - Store uniform top/bottom size information
-- [ ] **Process allergies/medical** - Store medical information securely
-- [ ] **Set proper division ranks** - Assign appropriate ranks by age group
-- [ ] **Link scout-parent relationships** - Ensure proper parent_id references
+### Phase 7: Database Validation and Testing
+- [ ] **Test team leader authentication** - Verify LEADER1 login functionality
+- [ ] **Test group leader authentication** - Verify LEADER login functionality
+- [ ] **Validate role-based access** - Check permissions and group visibility
+- [ ] **Verify group member capacity** - Check current_members field updates
+- [ ] **Test leader-group relationships** - Query user_groups assignments
 
-### Phase 5: Staff/Leader Import (Priority 3)
-- [ ] **Identify staff from data** - Extract any staff/leader information
-- [ ] **Create leader profiles** - Set up users with LEADER role
-- [ ] **Handle special roles** - Process LEADER1 and EXECUTIVE accounts  
-- [ ] **Update existing leaders** - Enhance existing staff profiles like Sarah Droubi
-- [ ] **Assign group leadership** - Link leaders to appropriate scout groups
+### Phase 8: Generate Creation Report
+- [ ] **Document created tables** - List new/modified database schema
+- [ ] **List created team leaders** - Show LEADER1 accounts with credentials
+- [ ] **List created group leaders** - Show LEADER accounts with credentials
+- [ ] **List created scout groups** - Show all 17 groups with details
+- [ ] **Show assignment mappings** - Complete leader-to-group relationships
+- [ ] **Provide test credentials** - Share sample login information for verification
 
-### Phase 6: Data Validation & Cleanup (Priority 3)
-- [ ] **Validate parent-scout links** - Ensure all relationships are correct
-- [ ] **Check email uniqueness** - Resolve any duplicate email issues
-- [ ] **Verify group assignments** - Confirm scouts in correct age groups
-- [ ] **Test user authentication** - Ensure all users can log in with temp passwords
-- [ ] **Generate import report** - Document successful imports and any issues
+## Expected Final State
 
-### Phase 7: Data Quality Assurance (Priority 4)
-- [ ] **Review missing child data** - Handle records marked "URGENT: No child data"
-- [ ] **Validate age-division logic** - Ensure proper group placement
-- [ ] **Check medical information** - Verify allergies/medical data is secure
-- [ ] **Test API access** - Verify all users can access appropriate features
-- [ ] **Document data issues** - Create report of any unresolved problems
+### Database Tables
+- [x] users (existing) - Enhanced with LEADER1 support
+- [x] groups (existing) - Enhanced with specific group data
+- [ ] user_groups (new) - Leader-group assignments
+- [ ] scouts, events, messages, achievements, attendance (existing)
 
-## Technical Implementation Details
+### User Accounts (31 total)
+- **3 Team Leaders** (LEADER1 role): Hawraa, Abbas, Sayed
+- **28 Group Leaders** (LEADER role): All individual group leaders
+- **All with email format**: firstname.lastname@msaportal.com
+- **All with temp password**: leader123 (bcrypt hashed)
 
-### Data Processing Strategy
-```javascript
-// Example parent processing
-const parentData = {
-  email: row.parent_email,
-  first_name: row.parent_first_name, 
-  last_name: row.parent_last_name,
-  phone: row.parent_phone,
-  role: 'PARENT',
-  password: hashedTempPassword
-}
+### Scout Groups (17 total)
+- **5 Joeys groups** (ages 5-7) with specific age/gender divisions
+- **8 Cubs groups** (ages 8-11) with specific age/gender divisions
+- **4 Scouts groups** (ages 12-15) with specific age/gender divisions
 
-// Example scout processing  
-const scoutData = {
-  first_name: row.child_first_name,
-  last_name: row.child_last_name,
-  age: row.child_age,
-  gender: row.child_gender,
-  school: row.child_school,
-  parent_id: parentId,
-  group_id: groupId,
-  uniform_size_top: row.child_uniform_top,
-  uniform_size_bottom: row.child_uniform_bottom,
-  allergies_medical: row.child_allergies
-}
-```
+### Assignments
+- Each group has 1-2 assigned leaders
+- Team leaders oversee their division groups
+- All relationships stored in user_groups table
 
-### Required Groups Creation
-- **Joeys Group**: Ages 5-7, beginner activities
-- **Cubs Group**: Ages 8-11, intermediate scouting  
-- **Scouts Group**: Ages 12-15, advanced scouting
+## Success Criteria
+- [ ] Database schema fully created with all required tables
+- [ ] All 3 team leaders created with LEADER1 role
+- [ ] All 28 group leaders created with LEADER role
+- [ ] All 17 specific scout groups created
+- [ ] All leader-group assignments properly established
+- [ ] Authentication works for sample accounts
+- [ ] Database relationships are properly established
+- [ ] Comprehensive creation report generated
 
-### Security Considerations
-- Hash all temporary passwords using bcrypt
-- Ensure proper role-based access control
-- Secure medical/allergy information appropriately
-- Validate all input data before database insertion
-
-## Expected Outcomes
-
-### Success Metrics
-- All unique parents imported with PARENT role
-- All children imported and linked to correct parents  
-- Proper group assignments based on age divisions
-- No duplicate email addresses in users table
-- All users can authenticate with temporary passwords
-
-### Data Integrity Requirements
-- Parent-scout relationships must be accurate
-- Age-based group assignments must follow MSA rules
-- Medical/allergy information must be preserved
-- Contact information must be complete and valid
-
-## Files to Create/Modify
-
-### New Scripts
-- `/scripts/import-real-msa-data.js` - Main import script using MCP
-- `/scripts/analyze-csv-data.js` - Data analysis and validation
-- `/scripts/create-groups.js` - Ensure required groups exist
-
-### API Enhancements
-- Enhance `/app/api/import-excel/route.ts` - Add real data processing
-- `/app/api/data/validate/route.ts` - Data validation endpoint
-
-### Configuration
-- Update MCP configuration for write access if needed
-- Environment variables for Supabase access
+## Files to Execute
+- Database schema creation scripts
+- Leader account creation with bcrypt passwords
+- Scout group creation with proper metadata
+- User-group assignment relationships
 
 ---
 
-## BMAD ANALYST COMPREHENSIVE DATA MIGRATION ANALYSIS
+# Frontend Groups and Scouts Display Analysis
 
-### 📊 **CSV Data Analysis Summary**
-**Total Records**: 79 applications from MSA_Applications.csv
-**Date Range**: May 13, 2025 to June 24, 2025
-**Key Issues Identified**:
-- **Missing Child Data**: 2 records (MSA_1, MSA_8) marked "URGENT: No child data for any of 4 children"
-- **Duplicate Applications**: 2 records (MSA_77, MSA_78) marked "DUPLICATE APPLICATION"
-- **Executive Priority**: 1 record (MSA_75) marked "EXECUTIVE TEAM - PRIORITY" (Sarah Droubi - potential existing user)
-- **Effective Import Records**: 75 usable applications (96% data quality)
+## Task Objective
+Search the codebase for frontend components that display groups and scouts to understand why groups data is not showing up for leaders after login.
 
-### 🗂️ **Data Structure Mapping**
+## Analysis Findings
 
-#### **CSV Fields → Database Schema Mapping**
-```yaml
-Parent Data:
-  parent_first_name → users.first_name
-  parent_last_name → users.last_name
-  parent_email → users.email
-  parent_phone → users.phone
-  street_address,city,state,postal_code → calculated full address
-  how_heard → metadata (not in current schema)
+### 1. Components that fetch groups data from the API ❌
+**Status**: No components found that actually fetch from `/api/groups` endpoint
+- Searched for patterns like `/api/groups`, `api/groups`, `fetch.*groups`
+- The `/api/groups` endpoint exists and works correctly (tested in DATABASE-ANALYSIS-REPORT.md)
+- **Problem**: Frontend components are not actually calling the groups API
 
-Scout Data:
-  child_first_name → scouts.first_name
-  child_last_name → scouts.last_name
-  child_dob → scouts.date_of_birth (NEW FIELD NEEDED)
-  child_age → scouts.age
-  child_gender → scouts.gender (NEW FIELD NEEDED)
-  child_school → scouts.school (NEW FIELD NEEDED)
-  child_uniform_top → scouts.uniform_size_top (NEW FIELD NEEDED)
-  child_uniform_bottom → scouts.uniform_size_bottom (NEW FIELD NEEDED)
-  child_allergies → scouts.allergies_medical (NEW FIELD NEEDED)
-  child_division → maps to group assignment (Joeys/Cubs/Scouts)
+### 2. Dashboard or home page components that show leader's groups ⚠️
+**Status**: Partially implemented but using mock data
 
-Application Metadata:
-  submission_date → applications.created_at
-  submission_id → applications.external_id (NEW FIELD NEEDED)
-  status → applications.status
-  priority_score → applications.priority_score (NEW FIELD NEEDED)
-  notes → applications.notes
-```
+**Leader Dashboard** (`/app/leader/dashboard/page.tsx`):
+- Shows scouts data fetched from `/api/scouts` 
+- Shows events data fetched from `/api/events`
+- **Missing**: No groups data fetching or display
+- Shows scout.group.name if available (from scouts API response)
 
-### 📈 **Division Distribution Analysis**
-```yaml
-Joeys (Ages 5-7): 14 scouts (18.7%)
-Cubs (Ages 8-11): 41 scouts (54.7%)
-Scouts (Ages 12-15): 20 scouts (26.6%)
-Total Valid Scouts: 75
-```
+**Executive Groups Page** (`/app/(dashboard)/executive/groups/page.tsx`):
+- Basic placeholder page with no actual functionality
 
-### 🏗️ **Required Database Schema Updates**
+**Leader Scouts Page** (`/app/(dashboard)/leader/scouts/page.tsx`):
+- Basic placeholder page with no actual functionality
 
-#### **1. Scouts Table Enhancement**
-```sql
-ALTER TABLE scouts ADD COLUMN IF NOT EXISTS date_of_birth DATE;
-ALTER TABLE scouts ADD COLUMN IF NOT EXISTS gender TEXT CHECK (gender IN ('Male', 'Female'));
-ALTER TABLE scouts ADD COLUMN IF NOT EXISTS school TEXT;
-ALTER TABLE scouts ADD COLUMN IF NOT EXISTS uniform_size_top TEXT;
-ALTER TABLE scouts ADD COLUMN IF NOT EXISTS uniform_size_bottom TEXT;
-ALTER TABLE scouts ADD COLUMN IF NOT EXISTS allergies_medical TEXT;
-```
+### 3. Components that use the /api/groups endpoint ❌
+**Status**: None found
+- No React components are actually calling the `/api/groups` endpoint
+- All group-related UI components use mock data or props
 
-#### **2. Applications Table Enhancement**
-```sql
-ALTER TABLE applications ADD COLUMN IF NOT EXISTS external_id TEXT UNIQUE;
-ALTER TABLE applications ADD COLUMN IF NOT EXISTS priority_score INTEGER DEFAULT 0;
-ALTER TABLE applications ADD COLUMN IF NOT EXISTS submission_date DATE;
-```
+### 4. Components that display scouts within groups ⚠️
+**Status**: Exists but uses mock/props data
 
-#### **3. Address Storage Solution**
-```sql
-CREATE TABLE IF NOT EXISTS addresses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  street_address TEXT NOT NULL,
-  city TEXT NOT NULL,
-  state TEXT NOT NULL,
-  postal_code TEXT NOT NULL,
-  country TEXT DEFAULT 'Australia',
-  is_primary BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+**GroupAdministration Component** (`/components/executive/GroupAdministration.tsx`):
+- Comprehensive group management UI with drag-and-drop
+- Uses hardcoded mock data instead of API calls
+- Shows groups with member counts, leaders, meeting times
+- **Problem**: Not connected to real API data
 
-### 🔧 **Data Processing Strategy**
+**GroupManagement Component** (`/components/leader/GroupManagement.tsx`):
+- Leader-specific group management interface
+- Expects Group and Scout objects as props
+- **Problem**: No parent component is providing real API data
 
-#### **Phase 1: Data Validation & Cleanup**
-1. **Identify Unique Parents**: Extract 75 unique parent emails (handle MSA_11 duplicate)
-2. **Process Child Records**: Handle 75 valid scout records
-3. **Skip Problem Records**: MSA_1, MSA_8 (no child data), MSA_77, MSA_78 (duplicates)
-4. **Handle Special Cases**: Sarah Droubi (MSA_75) - check if user exists
+**GroupSelector Component** (`/components/selectors/GroupSelector.tsx`):
+- UI component for selecting groups
+- Expects groups array as prop
+- **Problem**: No components are fetching groups to pass as props
 
-#### **Phase 2: Parent Account Creation**
-```javascript
-const parentProcessing = {
-  role: 'PARENT',
-  password: await bcrypt.hash('temppass123', 10),
-  status: 'ACTIVE',
-  first_name: row.parent_first_name,
-  last_name: row.parent_last_name,
-  email: row.parent_email,
-  phone: row.parent_phone
-};
-```
+## Root Cause Analysis
 
-#### **Phase 3: Scout Record Creation**
-```javascript
-const scoutProcessing = {
-  first_name: row.child_first_name,
-  last_name: row.child_last_name,
-  age: parseInt(row.child_age),
-  date_of_birth: parseDate(row.child_dob),
-  gender: row.child_gender,
-  school: row.child_school,
-  uniform_size_top: row.child_uniform_top,
-  uniform_size_bottom: row.child_uniform_bottom,
-  allergies_medical: row.child_allergies === 'None' ? null : row.child_allergies,
-  parent_id: parentId,
-  group_id: getGroupByDivision(row.child_division),
-  rank: getDefaultRankByDivision(row.child_division),
-  status: 'ACTIVE'
-};
-```
+### Primary Issues:
+1. **Missing API Integration**: Frontend components exist but don't fetch data from `/api/groups`
+2. **Placeholder Pages**: Many dashboard pages are basic placeholders without functionality
+3. **Mock Data Dependencies**: Components like GroupAdministration use hardcoded mock data
+4. **Incomplete Leader Dashboard**: Leader dashboard doesn't fetch or display assigned groups
 
-### 🎯 **Migration Scripts Required**
+### Data Flow Problems:
+1. **API exists** ✅: `/api/groups` endpoint works and returns data
+2. **Components exist** ⚠️: UI components are built but use mock data
+3. **Integration missing** ❌: No connection between API and frontend components
+4. **Authentication context** ⚠️: Leaders need group assignments filtered by their user ID
 
-#### **1. Schema Update Script** (`/scripts/update-schema-for-migration.sql`)
-- Add missing columns to scouts table
-- Create addresses table
-- Update applications table structure
-- Create necessary indexes
+## Recommended Implementation Plan
 
-#### **2. Data Migration Script** (`/scripts/migrate-msa-applications.js`)
-- Process CSV data in batches
-- Create parent accounts with PARENT role
-- Create scout records with proper group assignments
-- Handle address information
-- Generate comprehensive import report
+### Phase 1: Basic Groups Display
+- [ ] Add groups data fetching to leader dashboard
+- [ ] Display leader's assigned groups on dashboard
+- [ ] Connect GroupSelector to real API data
 
-#### **3. Group Assignment Logic**
-```javascript
-const getGroupByDivision = (division) => {
-  const groupMap = {
-    'Joeys': 'joeys-group-id',
-    'Cubs': 'cubs-group-id', 
-    'Scouts': 'scouts-group-id'
-  };
-  return groupMap[division];
-};
+### Phase 2: Full Group Management
+- [ ] Connect GroupAdministration component to real API
+- [ ] Implement leader-specific group filtering
+- [ ] Add scouts within groups display
 
-const getDefaultRankByDivision = (division) => {
-  const rankMap = {
-    'Joeys': 'Joey Scout',
-    'Cubs': 'Cub Scout',
-    'Scouts': 'Scout'
-  };
-  return rankMap[division];
-};
-```
+### Phase 3: Interactive Features
+- [ ] Implement group assignment functionality
+- [ ] Add group creation for executives
+- [ ] Connect group actions to real API endpoints
 
-### 🛡️ **Security & Compliance Considerations**
+## Key Files Identified
 
-#### **Data Privacy**
-- Hash all temporary passwords using bcrypt
-- Secure storage of medical/allergy information
-- Implement proper RLS policies for parent-scout relationships
+### API Endpoints:
+- `/app/api/groups/route.ts` - Working groups API ✅
 
-#### **Data Validation**
-- Email uniqueness validation
-- Age-division assignment validation
-- Phone number format validation
-- Address completeness validation
+### Frontend Components Needing Integration:
+- `/app/leader/dashboard/page.tsx` - Add groups display
+- `/app/(dashboard)/executive/groups/page.tsx` - Connect to GroupAdministration
+- `/app/(dashboard)/leader/scouts/page.tsx` - Connect to GroupManagement
+- `/components/executive/GroupAdministration.tsx` - Replace mock data with API
+- `/components/leader/GroupManagement.tsx` - Add API data fetching
+- `/components/selectors/GroupSelector.tsx` - Add groups data source
 
-### 📋 **Expected Migration Results**
-
-#### **Success Metrics**
-- **Parents Created**: 74 unique parent accounts (MSA_75 may exist)
-- **Scouts Created**: 75 scout records properly linked
-- **Groups Assigned**: All scouts placed in age-appropriate divisions
-- **Addresses Stored**: 75 complete address records
-- **Data Quality**: 95%+ successful migration rate
-
-#### **Post-Migration Tasks**
-- Send welcome emails with temporary passwords
-- Generate parent/scout pairing report
-- Create group membership reports for leaders
-- Validate all user authentications
-
----
-
-## 🎯 **BMAD ANALYST DELIVERABLES COMPLETE**
-
-### **📁 Files Created for Data Migration**
-
-#### **1. Database Schema Updates**
-- **`/supabase/msa-data-migration-schema.sql`** - Pre-migration database preparation
-  - Adds missing columns to scouts table (date_of_birth, gender, school, uniform sizes, allergies)
-  - Creates addresses table for parent location data
-  - Updates applications table with CSV metadata tracking
-  - Creates helper functions for group assignment and validation
-  - Sets up migration logging infrastructure
-
-#### **2. Migration Execution Script**
-- **`/scripts/migrate-msa-applications.js`** - Main data import automation
-  - Processes 79 CSV records with 95% expected success rate
-  - Creates 74 unique parent accounts with hashed passwords
-  - Links 75 scouts to correct parents and age-appropriate divisions
-  - Handles duplicate emails and special cases (Sarah Droubi)
-  - Provides comprehensive error handling and batch processing
-  - Generates detailed import statistics and failure reports
-
-#### **3. Validation & Quality Assurance**
-- **`/supabase/post-migration-validation.sql`** - Comprehensive data integrity checks
-  - Validates parent-scout relationships
-  - Confirms age-division assignment accuracy
-  - Checks for orphaned records and missing data
-  - Generates distribution reports by division
-  - Provides medical information and uniform size analytics
-
-#### **4. Implementation Guide**
-- **`/docs/msa-data-migration-guide.md`** - Complete execution playbook
-  - Step-by-step migration procedures
-  - Troubleshooting guide for common issues
-  - Post-migration user account management
-  - Security and compliance considerations
-  - Success metrics and validation checklists
-
-### **🔍 Key Analysis Insights**
-
-#### **Data Quality Assessment**
-- **High Quality**: 75/79 records (95%) suitable for import
-- **Problem Records**: 4 records identified and handled appropriately
-  - MSA_1, MSA_8: Missing child data (flagged for manual follow-up)
-  - MSA_77, MSA_78: Duplicate applications (excluded from import)
-- **Special Cases**: Sarah Droubi (MSA_75) executive priority handled
-
-#### **Migration Strategy**
-- **4-Role System**: Maintains existing PARENT/LEADER/LEADER1/EXECUTIVE structure
-- **Foreign Key Integrity**: All relationships properly mapped and enforced
-- **Security Compliance**: Temporary passwords, RLS policies, data encryption
-- **Scalable Architecture**: Designed for future growth and additional imports
-
-#### **Expected Outcomes**
-- **New Parent Accounts**: 74 users with PARENT role and temp passwords
-- **Scout Assignments**: 75 scouts distributed across Joeys (14), Cubs (41), Scouts (20)
-- **Complete Addresses**: Full Australian address data for all families
-- **Group Integration**: Seamless assignment to existing age-based divisions
-
-### **🚀 Ready for Execution**
-
-The MSA Portal is now ready for transformation from mock data to real production data. All scripts, validation procedures, and documentation are complete and tested. The migration can proceed with confidence in data integrity and system stability.
-
-**Next Step**: Execute the migration following the comprehensive guide in `/docs/msa-data-migration-guide.md`
-
----
-
-# CURRENT TASK: Database Error Analysis & MCP Verification
-
-## Todo List - Database Connection & Error Identification
-
-### Phase 1: MCP Connection Verification
-- [ ] **Test MCP Supabase connection** - Verify connection is active and working
-- [ ] **Query current database schema** - List all existing tables and their structure
-- [ ] **Check table permissions** - Ensure read/write access to required tables
-
-### Phase 2: Schema Analysis
-- [ ] **Identify missing tables** - Compare API expectations vs existing tables
-- [ ] **Check column structure** - Verify column names match API code expectations
-- [ ] **Analyze foreign key constraints** - Identify missing or broken relationships
-- [ ] **Check data type mismatches** - Find type conflicts causing errors
-
-### Phase 3: API Error Analysis
-- [ ] **Test Groups API endpoint** - Identify specific 500 errors and causes
-- [ ] **Test Messages API endpoint** - Check for missing tables/columns
-- [ ] **Test Scouts API endpoint** - Verify parent/group relationship issues
-- [ ] **Test Progress API endpoint** - Check for missing data structures
-- [ ] **Test Events API endpoint** - Verify event-related table issues
-
-### Phase 4: Constraint & Data Issues
-- [ ] **Check foreign key constraint violations** - Find broken relationships
-- [ ] **Identify role system mismatches** - Compare expected vs actual roles
-- [ ] **Check for null constraint violations** - Find missing required data
-- [ ] **Analyze enum value mismatches** - Check for invalid enum values
-
-### Phase 5: Comprehensive Error Documentation
-- [ ] **Document all 500 error causes** - List every database issue found
-- [ ] **Prioritize fixes by impact** - Rank issues by severity
-- [ ] **Create fix recommendations** - Suggest specific solutions for each issue
-- [ ] **Generate database fix report** - Comprehensive list for stakeholder review
-
----
+### Supporting Files:
+- `/types/index.ts` - Group interface defined ✅
+- `/lib/constants/groups.ts` - Group structure constants ✅
 
 ## Next Steps
-1. **Review and Approve Plan** - Confirm approach with stakeholder
-2. **Begin Phase 1** - Start with comprehensive data analysis
-3. **Test MCP Connection** - Verify Supabase write access
-4. **Execute Import Process** - Run data import in phases
-5. **Generate Final Report** - Document results and any issues
+
+The issue is clear: **The frontend components exist but are not connected to the API**. Leaders are not seeing groups because no component is actually fetching the groups data from the working API endpoint.
+
+Priority should be given to:
+1. Adding groups API calls to the leader dashboard
+2. Implementing leader-specific group filtering (based on assignments)
+3. Connecting existing UI components to real data sources
 
 ---
 
-## Implementation Notes
-- Use existing `/api/import-excel/route.ts` as foundation
-- Process data in small batches to handle errors gracefully  
-- Maintain audit trail of all import operations
-- Follow Islamic values of transparency and accountability
-- Ensure family data privacy and security throughout process
+## Previous Task Notes
+
+## Next Steps
+1. **Review and approve this creation plan**
+2. **Connect to Supabase via MCP**
+3. **Create missing database schema**
+4. **Create all user accounts and groups**
+5. **Establish all relationships and assignments**
+6. **Generate comprehensive creation report**

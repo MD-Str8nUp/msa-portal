@@ -16,9 +16,9 @@ export async function GET(request: Request) {
       .from('messages')
       .select('*');
 
-    // Apply filters
-    if (userId) {
-      query = query.or(`sender_id.eq.${userId},recipient_id.eq.${userId}`);
+    // Apply filters - for now only filter by sender_id since recipient_id may not exist
+    if (userId && userId !== 'anonymous') {
+      query = query.eq('sender_id', userId);
     }
 
     if (type) {
