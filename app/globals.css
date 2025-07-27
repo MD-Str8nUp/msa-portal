@@ -1,0 +1,191 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&family=Merriweather:wght@400;700&family=Amiri:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Mi'raj Scouts Academy Brand Colors */
+  
+  /* PRIMARY BRAND COLORS */
+  --msa-sage-green: 188 22% 45%;        /* #5F8A8B - Main brand color */
+  --msa-forest-green: 106 20% 34%;      /* #4A6741 - Secondary brand */
+  --msa-golden-yellow: 45 66% 52%;      /* #D4AF37 - Accent/CTA buttons */
+  --msa-deep-teal: 178 36% 26%;         /* #2C5F5D - Dark accents */
+  --msa-warm-brown: 38 24% 44%;         /* #8B7355 - Earth tones */
+  
+  /* SECONDARY BRAND COLORS */
+  --msa-light-sage: 120 25% 72%;        /* #A8C5A8 - Light backgrounds */
+  --msa-cream: 60 56% 91%;              /* #F5F5DC - Main background */
+  --msa-charcoal: 210 8% 19%;           /* #2D3436 - Primary text */
+  --msa-soft-white: 0 0% 99%;           /* #FEFEFE - Cards/surfaces */
+  
+  /* TYPOGRAPHY FAMILIES */
+  --msa-font-primary: 'Montserrat', sans-serif;     /* Headers, navigation */
+  --msa-font-secondary: 'Open Sans', sans-serif;    /* Body text, readable */
+  --msa-font-accent: 'Merriweather', serif;         /* Special headings */
+  --msa-font-arabic: 'Amiri', serif;                /* Arabic text elements */
+  
+  /* SHADCN/UI COMPATIBLE MAPPING */
+  --background: 60 56% 91%;              /* MSA Cream */
+  --foreground: 210 8% 19%;              /* MSA Charcoal */
+  
+  --card: 0 0% 99%;                      /* MSA Soft White */
+  --card-foreground: 210 8% 19%;         /* MSA Charcoal */
+  
+  --popover: 0 0% 99%;                   /* MSA Soft White */
+  --popover-foreground: 210 8% 19%;      /* MSA Charcoal */
+  
+  /* Primary - MSA Sage Green */
+  --primary: 188 22% 45%;                /* MSA Sage Green */
+  --primary-foreground: 0 0% 99%;        /* MSA Soft White */
+  
+  /* Secondary - MSA Light Sage */
+  --secondary: 120 25% 72%;              /* MSA Light Sage */
+  --secondary-foreground: 210 8% 19%;    /* MSA Charcoal */
+  
+  /* Muted - Light MSA Cream */
+  --muted: 60 56% 95%;                   /* Lighter MSA Cream */
+  --muted-foreground: 210 8% 45%;        /* Lighter MSA Charcoal */
+  
+  /* Accent - MSA Golden Yellow */
+  --accent: 45 66% 52%;                  /* MSA Golden Yellow */
+  --accent-foreground: 210 8% 19%;       /* MSA Charcoal */
+  
+  /* Destructive - Muted red */
+  --destructive: 0 60% 50%;
+  --destructive-foreground: 0 0% 98%;
+  
+  /* Success - MSA Forest Green */
+  --success: 106 20% 34%;                /* MSA Forest Green */
+  --success-foreground: 0 0% 99%;        /* MSA Soft White */
+  
+  /* Warning - MSA Golden Yellow (darker) */
+  --warning: 45 66% 45%;                 /* Darker MSA Golden Yellow */
+  --warning-foreground: 0 0% 99%;        /* MSA Soft White */
+  
+  /* Borders and inputs */
+  --border: 120 25% 85%;                 /* Light MSA Light Sage */
+  --input: 120 25% 85%;                  /* Light MSA Light Sage */
+  --ring: 188 22% 45%;                   /* MSA Sage Green */
+  
+  --radius: 0.75rem;
+  
+  /* Mobile-first font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  
+  /* Touch target sizes */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 83%;
+  }
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--msa-font-secondary); /* Open Sans for body text */
+  font-size: var(--text-base);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Typography hierarchy with MSA brand fonts */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--msa-font-primary); /* Montserrat for headings */
+  font-weight: 600;
+  line-height: 1.2;
+  color: hsl(var(--foreground));
+}
+
+.font-accent {
+  font-family: var(--msa-font-accent); /* Merriweather for special headings */
+}
+
+.font-arabic {
+  font-family: var(--msa-font-arabic); /* Amiri for Arabic text */
+}
+
+/* Navigation and button text */
+nav, button, .btn {
+  font-family: var(--msa-font-primary); /* Montserrat */
+}
+
+/* Brand-specific utility classes */
+.text-msa-sage { color: hsl(var(--msa-sage-green)); }
+.text-msa-forest { color: hsl(var(--msa-forest-green)); }
+.text-msa-golden { color: hsl(var(--msa-golden-yellow)); }
+.text-msa-teal { color: hsl(var(--msa-deep-teal)); }
+.text-msa-brown { color: hsl(var(--msa-warm-brown)); }
+
+.bg-msa-sage { background-color: hsl(var(--msa-sage-green)); }
+.bg-msa-forest { background-color: hsl(var(--msa-forest-green)); }
+.bg-msa-golden { background-color: hsl(var(--msa-golden-yellow)); }
+.bg-msa-cream { background-color: hsl(var(--msa-cream)); }
+.bg-msa-light-sage { background-color: hsl(var(--msa-light-sage)); }
+
+/* Mobile-first touch-friendly utilities */
+@layer utilities {
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+  
+  .touch-target-comfortable {
+    min-height: var(--touch-target-comfortable);
+    min-width: var(--touch-target-comfortable);
+  }
+  
+  .text-mobile-friendly {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  .card-mobile {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm p-4;
+  }
+  
+  .quick-action-card {
+    @apply card-mobile hover:shadow-md transition-shadow duration-200 cursor-pointer touch-target-comfortable;
+  }
+  
+  .mobile-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  }
+}
