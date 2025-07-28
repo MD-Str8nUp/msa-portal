@@ -93,6 +93,8 @@ export async function POST(request: Request) {
     console.log('✅ User found:', user.email);
     console.log('🔐 User has password:', !!user.password);
     console.log('📏 Stored password length:', user.password?.length);
+    console.log('🔍 User role:', user.role);
+    console.log('🔍 User fields:', Object.keys(user));
 
     // Check password with detailed logging
     let isPasswordValid = false;
@@ -145,18 +147,22 @@ export async function POST(request: Request) {
       })
       .eq('id', user.id);
 
+    console.log('🔧 Building user response object...');
+    
     const userResponse = {
       id: user.id,
       email: user.email,
-      name: user.full_name || `${user.first_name} ${user.last_name}` || user.name,
+      name: user.full_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || 'Unknown User',
       role: user.role?.toUpperCase() || 'PARENT',
-      phone: user.phone,
+      phone: user.phone || '',
       first_name: user.first_name || user.name?.split(' ')[0] || '',
       last_name: user.last_name || user.name?.split(' ').slice(1).join(' ') || '',
       is_also_leader: user.is_also_leader || false,
       is_also_parent: user.is_also_parent || false,
-      current_view_mode: user.current_view_mode || 'parent'
+      current_view_mode: user.current_view_mode || (user.role?.toLowerCase() === 'parent' ? 'parent' : 'leader')
     };
+    
+    console.log('🔧 User response created:', JSON.stringify(userResponse, null, 2));
 
     const response = NextResponse.json({
       success: true,
