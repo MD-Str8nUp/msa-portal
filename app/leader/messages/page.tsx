@@ -11,6 +11,8 @@ interface Message {
   sender_id: string;
   sender_name?: string;
   recipient_type: 'individual' | 'group' | 'all_parents';
+  group_id?: string | null;
+  scout_ids?: string[];
   created_at: string;
   status: 'draft' | 'sent';
 }
@@ -129,12 +131,12 @@ export default function LeaderMessagesPage() {
       const messageData = {
         title: newMessage.title,
         content: newMessage.content,
-        sender_id: userDetails?.id,
-        sender_name: userDetails?.name,
+        sender_id: userDetails?.id || '',
+        sender_name: userDetails?.name || '',
         recipient_type: newMessage.recipient_type,
         group_id: newMessage.group_id || null,
         scout_ids: newMessage.scout_ids,
-        status: 'sent',
+        status: 'sent' as const,
         created_at: new Date().toISOString()
       };
 

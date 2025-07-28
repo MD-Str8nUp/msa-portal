@@ -42,7 +42,7 @@ export async function POST() {
         fixes.push({ action: 'Create user_groups table', status: 'success' });
       }
     } catch (e) {
-      fixes.push({ action: 'Create user_groups table', status: 'failed', error: e.message });
+      fixes.push({ action: 'Create user_groups table', status: 'failed', error: e instanceof Error ? e.message : 'Unknown error' });
     }
 
     // 2. Update role designations
@@ -75,7 +75,7 @@ export async function POST() {
       fixes.push({ action: 'Role assignments', status: 'partial', note: 'EXECUTIVE roles set, PARENT roles will be added during data import' });
 
     } catch (e) {
-      fixes.push({ action: 'Update roles', status: 'failed', error: e.message });
+      fixes.push({ action: 'Update roles', status: 'failed', error: e instanceof Error ? e.message : 'Unknown error' });
     }
 
     // 3. Create scouts table if missing columns  
@@ -92,7 +92,7 @@ export async function POST() {
         fixes.push({ action: 'Check scouts table', status: 'ok' });
       }
     } catch (e) {
-      fixes.push({ action: 'Check scouts table', status: 'failed', error: e.message });
+      fixes.push({ action: 'Check scouts table', status: 'failed', error: e instanceof Error ? e.message : 'Unknown error' });
     }
 
     return NextResponse.json({

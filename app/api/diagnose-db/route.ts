@@ -13,11 +13,11 @@ export async function GET() {
       }
     });
 
-    const issues = [];
+    const issues: string[] = [];
 
     // Check if required tables exist
     const requiredTables = ['profiles', 'groups', 'scouts', 'user_groups', 'messages'];
-    const tableChecks = {};
+    const tableChecks: Record<string, { exists: boolean; error?: string }> = {};
 
     for (const table of requiredTables) {
       try {
@@ -63,8 +63,8 @@ export async function GET() {
     // Check role distribution
     try {
       const { data: roleData } = await supabase.from('profiles').select('role');
-      const roleCounts = {};
-      roleData?.forEach(item => {
+      const roleCounts: Record<string, number> = {};
+      roleData?.forEach((item: any) => {
         roleCounts[item.role] = (roleCounts[item.role] || 0) + 1;
       });
       

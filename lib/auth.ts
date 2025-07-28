@@ -1,7 +1,5 @@
 "use client";
 
-import { mockAuthService } from "./mock/data";
-
 // Auth utility functions with real API integration
 export const auth = {
   // Get the current user
@@ -26,7 +24,7 @@ export const auth = {
     }
     
     // Fall back to mock for development
-    return mockAuthService.getCurrentUser();
+    return null;
   },
   
   // Log in a user
@@ -52,7 +50,7 @@ export const auth = {
     }
     
     // Fall back to mock for development
-    return mockAuthService.login(email, password);
+    return { success: false, error: 'Authentication service not configured' };
   },
   
   // Log out the current user
@@ -73,8 +71,8 @@ export const auth = {
     }
     
     // Fall back to mock for development
-    console.log("Logging out user:", mockAuthService.getCurrentUser()?.name);
-    return mockAuthService.logout();
+    console.log("Logging out user");
+    return { success: true };
   },
   
   // Check if a user is logged in
@@ -96,7 +94,7 @@ export const auth = {
     }
     
     // Fall back to mock for development
-    const user = mockAuthService.getCurrentUser();
+    const user = null;
     return user !== null;
   }
 };
