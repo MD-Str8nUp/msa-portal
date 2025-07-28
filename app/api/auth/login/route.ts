@@ -4,11 +4,16 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const requestBody = await request.json();
+    const { email, password } = requestBody;
 
+    console.log('==== MSA PORTAL LOGIN DEBUG ====');
     console.log('🔐 Login attempt for:', email);
     console.log('🔑 Password length:', password?.length);
     console.log('🔑 Password starts with:', password?.substring(0, 5) + '...');
+    console.log('🌍 Environment:', process.env.NODE_ENV);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('📱 Request body keys:', Object.keys(requestBody));
 
     if (!email || !password) {
       console.log('❌ Missing email or password');
@@ -22,8 +27,18 @@ export async function POST(request: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     
+    console.log('🔗 Environment variables check:');
+    console.log('   URL exists:', !!supabaseUrl);
+    console.log('   URL length:', supabaseUrl?.length || 0);
+    console.log('   URL starts with:', supabaseUrl?.substring(0, 30) + '...' || 'N/A');
+    console.log('   KEY exists:', !!supabaseKey);
+    console.log('   KEY length:', supabaseKey?.length || 0);
+    console.log('   KEY starts with:', supabaseKey?.substring(0, 20) + '...' || 'N/A');
+    
     if (!supabaseUrl || !supabaseKey) {
       console.error('❌ Missing Supabase environment variables');
+      console.error('   Missing URL:', !supabaseUrl);
+      console.error('   Missing KEY:', !supabaseKey);
       return NextResponse.json({
         success: false,
         error: 'Server configuration error'
@@ -37,12 +52,19 @@ export async function POST(request: Request) {
       }
     });
 
+    console.log('🔍 Starting user database lookup...');
+    
     // Get user from database first - try users table first, then profiles as fallback
     let { data: user, error } = await supabase
       .from('users')
       .select('*')
       .eq('email', email)
       .single();
+
+    console.log('🔍 Users table query result:');
+    console.log('   Error:', error?.message || 'None');
+    console.log('   User found:', !!user);
+    console.log('   User email match:', user?.email === email);
 
     // If not found in users table, try profiles table (backward compatibility)
     if (error || !user) {

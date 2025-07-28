@@ -1,4 +1,89 @@
-# Create MSA Portal Database Schema and Leaders Data
+# MSA Portal Authentication Debug - Production Deployment Issue
+
+## Problem Statement
+All login attempts on the Vercel deployment (msa-portal11.vercel.app) fail with 401 "Invalid email or password" errors, despite successful deployment and proper environment variable configuration.
+
+## Current Status
+- ✅ App deployed successfully to Vercel
+- ✅ Environment variables set (SUPABASE_URL, ANON_KEY, SERVICE_ROLE_KEY)
+- ✅ Supabase connection working (tables accessible)
+- ✅ Users exist in database with proper bcrypt hashes
+- ❌ ALL login attempts return 401 regardless of credentials
+
+## Debug Action Plan
+
+### Phase 1: Environment & Configuration Verification
+- [ ] 1.1 Create debug endpoint to verify environment variables in production
+- [ ] 1.2 Test Supabase connection from production environment
+- [ ] 1.3 Verify database table structure and user data availability
+- [ ] 1.4 Check for any middleware interference
+
+### Phase 2: Authentication Flow Analysis
+- [ ] 2.1 Add comprehensive logging to login route
+- [ ] 2.2 Create test endpoint to bypass authentication logic
+- [ ] 2.3 Test password comparison functions in isolation
+- [ ] 2.4 Verify bcrypt compatibility in Vercel environment
+
+### Phase 3: Production-Specific Issues
+- [ ] 3.1 Check for Node.js version differences
+- [ ] 3.2 Verify bcrypt vs bcryptjs compatibility
+- [ ] 3.3 Test environment variable access in serverless functions
+- [ ] 3.4 Check for any build-time vs runtime differences
+
+### Phase 4: Simplified Testing
+- [ ] 4.1 Create minimal test endpoint with hardcoded credentials
+- [ ] 4.2 Test direct database queries without authentication
+- [ ] 4.3 Implement temporary plain-text password fallback for testing
+- [ ] 4.4 Verify cookie setting and session management
+
+### Phase 5: Fix Implementation
+- [ ] 5.1 Implement identified fixes
+- [ ] 5.2 Test with known good credentials
+- [ ] 5.3 Verify all user types can login (parent, leader, executive)
+- [ ] 5.4 Remove debug logging for production
+
+## Key Investigation Areas
+
+### 1. Environment Variables
+- Check if all required env vars are available in production
+- Verify SERVICE_ROLE_KEY has proper permissions
+- Ensure no trailing spaces or encoding issues
+
+### 2. Database Access
+- Confirm users table is accessible with SERVICE_ROLE_KEY
+- Verify user records exist and have proper password hashes
+- Check table permissions and RLS policies
+
+### 3. Password Hashing
+- Test bcrypt compatibility in Vercel serverless environment
+- Verify hash format and salt rounds
+- Check for any encoding/string comparison issues
+
+### 4. Serverless Function Behavior
+- Investigate cold start issues
+- Check for memory or timeout constraints
+- Verify proper error handling and logging
+
+## Success Criteria
+- Any valid user can successfully login on production
+- Authentication flow works consistently
+- Proper error messages for invalid credentials
+- Session management working correctly
+
+## Files to Examine/Modify
+- `/app/api/auth/login/route.ts` - Main login endpoint
+- `/lib/supabase/client.ts` - Supabase configuration
+- `/middleware.ts` - Request middleware
+- Environment variables in Vercel dashboard
+
+---
+
+## Progress Log
+*Track completion of tasks and findings here*
+
+---
+
+# PREVIOUS TASKS - Create MSA Portal Database Schema and Leaders Data
 
 ## Project Overview
 Create the missing database schema and insert all groups and leaders data into the Supabase database using MCP. This includes creating missing tables, 3 team leaders with LEADER1 role, 25+ group leaders with LEADER role, and 17 specific scout groups with proper assignments.
