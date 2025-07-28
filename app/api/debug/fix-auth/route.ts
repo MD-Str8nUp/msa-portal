@@ -115,20 +115,20 @@ export async function POST() {
           password_match: passwordMatch,
           user_id: testUser.id,
           user_role: testUser.role
-        };
+        } as any;
       } catch (bcryptError) {
         authTest = {
           success: false,
           user_found: true,
           bcrypt_error: bcryptError instanceof Error ? bcryptError.message : 'Unknown'
-        };
+        } as any;
       }
     } else {
       authTest = {
         success: false,
         user_found: false,
         query_error: queryError?.message
-      };
+      } as any;
     }
 
     // Count total users

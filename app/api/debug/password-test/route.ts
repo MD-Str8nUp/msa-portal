@@ -69,14 +69,14 @@ export async function POST(request: Request) {
     if (plainPassword) {
       try {
         const newHash = await bcrypt.hash(plainPassword, 10);
-        results.hash_generation = {
+        (results as any).hash_generation = {
           generated_hash: newHash,
           hash_length: newHash.length,
           starts_with_bcrypt: newHash.startsWith('$2'),
           generation_successful: true
         };
       } catch (hashError) {
-        results.hash_generation = {
+        (results as any).hash_generation = {
           error: hashError instanceof Error ? hashError.message : 'Hash generation failed',
           generation_successful: false
         };
