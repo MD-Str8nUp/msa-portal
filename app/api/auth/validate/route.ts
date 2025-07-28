@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import * as crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+
 // Verify a token
 function verifyToken(token: string): { valid: boolean; userId?: string } {
   try {
