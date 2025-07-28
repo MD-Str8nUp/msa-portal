@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import FileUploadDialog from '@/components/ui/FileUploadDialog';
+import DocumentsList from '@/components/ui/DocumentsList';
 
 interface Scout {
   id: string;
@@ -45,6 +47,7 @@ export default function LeaderDashboardPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -349,11 +352,24 @@ export default function LeaderDashboardPage() {
           </div>
         </div>
 
+        {/* Shared Documents Section */}
+        <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Group Documents</h3>
+            <DocumentsList
+              showUploadButton={true}
+              onUploadClick={() => setShowUploadDialog(true)}
+              canDelete={true}
+              currentUserId={userDetails?.id}
+            />
+          </div>
+        </div>
+
         {/* Quick Navigation */}
         <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Leader Tools</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <button
                 onClick={() => router.push('/leader/scouts')}
                 className="p-4 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors text-center"
@@ -389,10 +405,30 @@ export default function LeaderDashboardPage() {
                 <div className="text-2xl mb-2">💬</div>
                 <div className="font-medium">Messages</div>
               </button>
+              <button
+                onClick={() => setShowUploadDialog(true)}
+                className="p-4 bg-msa-sage/10 text-msa-sage rounded-lg hover:bg-msa-sage/20 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">📁</div>
+                <div className="font-medium">Share Files</div>
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* File Upload Dialog */}
+      {userDetails && (
+        <FileUploadDialog
+          isOpen={showUploadDialog}
+          onClose={() => setShowUploadDialog(false)}
+          uploaderId={userDetails.id}
+          onUploadSuccess={() => {
+            // Refresh the documents list by triggering a re-render
+            setShowUploadDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 }

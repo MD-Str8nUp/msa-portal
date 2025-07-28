@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import FileUploadDialog from '@/components/ui/FileUploadDialog';
+import DocumentsList from '@/components/ui/DocumentsList';
 
 interface Scout {
   id: string;
@@ -35,6 +37,7 @@ export default function ParentDashboardPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -139,7 +142,7 @@ export default function ParentDashboardPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
@@ -188,6 +191,24 @@ export default function ParentDashboardPage() {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Progress</dt>
                     <dd className="text-lg font-medium text-gray-900">View</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600 font-bold">📁</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Shared Files</dt>
+                    <dd className="text-lg font-medium text-gray-900">Access</dd>
                   </dl>
                 </div>
               </div>
@@ -266,11 +287,24 @@ export default function ParentDashboardPage() {
           </div>
         </div>
 
+        {/* Shared Documents Section */}
+        <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Shared Documents</h3>
+            <DocumentsList
+              showUploadButton={true}
+              onUploadClick={() => setShowUploadDialog(true)}
+              canDelete={true}
+              currentUserId={userDetails?.id}
+            />
+          </div>
+        </div>
+
         {/* Quick Navigation */}
         <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <button
                 onClick={() => router.push('/parent/scouts')}
                 className="p-4 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors text-center"
@@ -299,10 +333,30 @@ export default function ParentDashboardPage() {
                 <div className="text-2xl mb-2">💬</div>
                 <div className="font-medium">Messages</div>
               </button>
+              <button
+                onClick={() => setShowUploadDialog(true)}
+                className="p-4 bg-msa-sage/10 text-msa-sage rounded-lg hover:bg-msa-sage/20 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">📁</div>
+                <div className="font-medium">Share Files</div>
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* File Upload Dialog */}
+      {userDetails && (
+        <FileUploadDialog
+          isOpen={showUploadDialog}
+          onClose={() => setShowUploadDialog(false)}
+          uploaderId={userDetails.id}
+          onUploadSuccess={() => {
+            // Refresh the documents list by triggering a re-render
+            setShowUploadDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 }

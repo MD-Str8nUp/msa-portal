@@ -53,14 +53,37 @@ export default function LoginPage() {
       }
 
       if (result.user) {
-        console.log('Login successful for:', result.user.email);
+        console.log('Login successful for:', result.user.email, 'Role:', result.user.role);
         
         // Store user session locally
         localStorage.setItem('currentUser', JSON.stringify(result.user));
         
-        console.log('Session stored, redirecting to dashboard');
+        // Determine role-based redirect URL
+        let redirectUrl = '/';
+        const userRole = result.user.role?.toLowerCase();
+        
+        switch (userRole) {
+          case 'parent':
+            redirectUrl = '/parent/dashboard';
+            break;
+          case 'leader':
+            redirectUrl = '/leader/dashboard';
+            break;
+          case 'leader1':
+            // Check view mode preference, default to leader dashboard
+            redirectUrl = result.user.current_view_mode === 'parent' ? '/parent/dashboard' : '/leader/dashboard';
+            break;
+          case 'executive':
+          case 'admin':
+            redirectUrl = '/admin/data-management';
+            break;
+          default:
+            redirectUrl = '/'; // Fallback to home page
+        }
+        
+        console.log('Session stored, redirecting to:', redirectUrl);
         // Force redirect with window.location for maximum reliability  
-        window.location.href = '/';
+        window.location.href = redirectUrl;
       } else {
         setError('Login response invalid. Please try again.');
         setLoading(false);

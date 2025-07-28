@@ -7,13 +7,13 @@ export async function POST(request: Request) {
     const requestBody = await request.json();
     const { email, password } = requestBody;
 
-    console.log('==== MSA PORTAL LOGIN DEBUG ====');
+    // Reduced logging for production
     console.log('🔐 Login attempt for:', email);
-    console.log('🔑 Password length:', password?.length);
-    console.log('🔑 Password starts with:', password?.substring(0, 5) + '...');
-    console.log('🌍 Environment:', process.env.NODE_ENV);
-    console.log('⏰ Timestamp:', new Date().toISOString());
-    console.log('📱 Request body keys:', Object.keys(requestBody));
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔑 Password length:', password?.length);
+      console.log('🌍 Environment:', process.env.NODE_ENV);
+      console.log('⏰ Timestamp:', new Date().toISOString());
+    }
 
     if (!email || !password) {
       console.log('❌ Missing email or password');

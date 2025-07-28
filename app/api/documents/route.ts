@@ -60,16 +60,32 @@ export async function POST(request: Request) {
       title, 
       description, 
       type = 'GENERAL', 
-      url, 
+      file_url, 
+      file_type,
+      file_size,
       scoutId, 
       groupId, 
       uploaderId 
     } = body;
 
-    if (!title || !url || !uploaderId) {
+    if (!title || !file_url || !uploaderId) {
       return NextResponse.json({
         success: false,
-        error: 'Title, URL, and uploader ID are required'
+        error: 'Title, file URL, and uploader ID are required'
+      }, { status: 400 });
+    }
+
+    // Verify uploader exists
+    const { data: uploader, error: uploaderError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', uploaderId)
+      .single();
+
+    if (uploaderError || !uploader) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid uploader ID'
       }, { status: 400 });
     }
 
@@ -79,11 +95,13 @@ export async function POST(request: Request) {
         title,
         description,
         type,
-        url,
+        file_url,
+        file_type,
+        file_size,
         scout_id: scoutId,
         group_id: groupId,
-        uploader_id: uploaderId,
-        uploaded_at: new Date().toISOString()
+        uploaded_by: uploaderId,
+        created_at: new Date().toISOString()
       })
       .select(`
         *,
@@ -103,7 +121,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Document uploaded successfully',
+      message: 'Document created successfully',
       data: newDocument
     }, { status: 201 });
 
